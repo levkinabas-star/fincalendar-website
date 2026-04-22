@@ -1,552 +1,616 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
 import {
-  Smartphone, Monitor, Download, ArrowRight, CheckCircle, Wallet,
-  Calendar, TrendingUp, Shield, Bell, PieChart, Repeat,
-  ChevronDown, X, Menu
+  Home, CreditCard, Calendar, BarChart2, Settings, Plus,
+  TrendingUp, TrendingDown, ArrowLeftRight, Check, X, Menu
 } from 'lucide-react';
 import './App.css';
 
-const APK_URL = 'https://github.com/fincalendar/budget-tracker/releases/download/v1.0.0/BudgetTracker-release.apk';
+// Types
+type Currency = 'RUB' | 'USD' | 'EUR';
+type TransactionType = 'income' | 'expense' | 'transfer';
+type Language = 'ru' | 'en';
 
-const features = [
-  { icon: <Wallet size={28} />, title: 'Счета и баланс', desc: 'Управляйте несколькими счетами в разных валютах' },
-  { icon: <TrendingUp size={28} />, title: 'Доходы и расходы', desc: 'Отслеживайте каждую транзакцию с детальной статистикой' },
-  { icon: <Calendar size={28} />, title: 'Календарь', desc: 'Планируйте расходы и не забудьте о важных датах' },
-  { icon: <PieChart size={28} />, title: 'Статистика', desc: 'Визуальные графики помогут понять структуру расходов' },
-  { icon: <Repeat size={28} />, title: 'Автоплатежи', desc: 'Настройте повторяющиеся платежи и никогда не забывайте' },
-  { icon: <Bell size={28} />, title: 'Умные уведомления', desc: 'Получайте напоминания о предстоящих и просроченных платежах' },
-  { icon: <Shield size={28} />, title: 'Приватность', desc: 'Все данные хранятся локально на вашем устройстве' },
-  { icon: <Smartphone size={28} />, title: 'Виджет', desc: 'Держите баланс под рукой с домашнего экрана' },
+interface Account {
+  id: string;
+  name: string;
+  balance: number;
+  currency: Currency;
+  color: string;
+  icon: string;
+  createdAt: string;
+}
+
+interface Transaction {
+  id: string;
+  accountId: string;
+  type: TransactionType;
+  amount: number;
+  currency: Currency;
+  categoryId: string;
+  description: string;
+  date: string;
+  createdAt: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  nameEn: string;
+  icon: string;
+  type: 'income' | 'expense' | 'both';
+  color: string;
+  isPreset: boolean;
+}
+
+// Store
+interface StoreState {
+  language: Language;
+  defaultCurrency: Currency;
+  accounts: Account[];
+  transactions: Transaction[];
+  categories: Category[];
+  onboardingCompleted: boolean;
+  setLanguage: (lang: Language) => void;
+  setDefaultCurrency: (currency: Currency) => void;
+  addAccount: (account: Omit<Account, 'id' | 'createdAt'>) => void;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  addCategory: (cat: Omit<Category, 'id' | 'isPreset'>) => void;
+  setOnboardingCompleted: () => void;
+}
+
+const CURRENCY_SYMBOLS: Record<Currency, string> = { RUB: '₽', USD: '$', EUR: '€' };
+
+const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
+  { name: 'Продукты', nameEn: 'Food', icon: '🛒', type: 'expense', color: '#10B981', isPreset: true },
+  { name: 'Транспорт', nameEn: 'Transport', icon: '🚗', type: 'expense', color: '#3B82F6', isPreset: true },
+  { name: 'Развлечения', nameEn: 'Entertainment', icon: '🎬', type: 'expense', color: '#8B5CF6', isPreset: true },
+  { name: 'Здоровье', nameEn: 'Health', icon: '💊', type: 'expense', color: '#EF4444', isPreset: true },
+  { name: 'Зарплата', nameEn: 'Salary', icon: '💰', type: 'income', color: '#10B981', isPreset: true },
+  { name: 'Фриланс', nameEn: 'Freelance', icon: '💻', type: 'income', color: '#6366F1', isPreset: true },
 ];
 
-function App() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showIphoneModal, setShowIphoneModal] = useState(false);
+export const useStore = create<StoreState>()(
+  persist(
+    (set) => ({
+      language: 'ru',
+      defaultCurrency: 'RUB',
+      accounts: [],
+      transactions: [],
+      categories: DEFAULT_CATEGORIES.map((c, i) => ({ ...c, id: `cat-${i}` })),
+      onboardingCompleted: false,
+      setLanguage: (lang) => set({ language: lang }),
+      setDefaultCurrency: (currency) => set({ defaultCurrency: currency }),
+      addAccount: (account) => set((state) => ({
+        accounts: [...state.accounts, { ...account, id: uuidv4(), createdAt: new Date().toISOString() }]
+      })),
+      addTransaction: (tx) => set((state) => {
+        const newTx = { ...tx, id: uuidv4(), createdAt: new Date().toISOString() };
+        const updatedAccounts = state.accounts.map(acc => {
+          if (acc.id !== tx.accountId) return acc;
+          const delta = tx.type === 'income' ? tx.amount : tx.type === 'expense' ? -tx.amount : 0;
+          return { ...acc, balance: acc.balance + delta };
+        });
+        return { transactions: [...state.transactions, newTx], accounts: updatedAccounts };
+      }),
+      addCategory: (cat) => set((state) => ({
+        categories: [...state.categories, { ...cat, id: uuidv4(), isPreset: false }]
+      })),
+      setOnboardingCompleted: () => set({ onboardingCompleted: true }),
+    }),
+    { name: 'fincalendar-storage' }
+  )
+);
 
-  useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      document.body.classList.add('mobile-device');
-    }
-  }, []);
+// Translations
+const t = {
+  ru: {
+    home: 'Главная', accounts: 'Счета', calendar: 'Календарь',
+    statistics: 'Статистика', settings: 'Настройки',
+    addExpense: 'Расход', addIncome: 'Доход', add: 'Добавить',
+    totalBalance: 'Общий баланс', income: 'Доходы', expense: 'Расходы',
+    recentTransactions: 'Последние операции', noTransactions: 'Нет операций',
+    accountName: 'Название счёта', balance: 'Баланс', currency: 'Валюта',
+    continue: 'Продолжить', welcome: 'Добро пожаловать в FinCalendar',
+    welcomeDesc: 'Ваш личный трекер бюджета. Начните с создания счёта.',
+    createAccount: 'Создать счёт', addFunds: 'Добавить средства',
+    description: 'Описание', amount: 'Сумма', date: 'Дата', category: 'Категория',
+    save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', edit: 'Редактировать'
+  },
+  en: {
+    home: 'Home', accounts: 'Accounts', calendar: 'Calendar',
+    statistics: 'Statistics', settings: 'Settings',
+    addExpense: 'Expense', addIncome: 'Income', add: 'Add',
+    totalBalance: 'Total Balance', income: 'Income', expense: 'Expenses',
+    recentTransactions: 'Recent Transactions', noTransactions: 'No transactions',
+    accountName: 'Account Name', balance: 'Balance', currency: 'Currency',
+    continue: 'Continue', welcome: 'Welcome to FinCalendar',
+    welcomeDesc: 'Your personal budget tracker. Start by creating an account.',
+    createAccount: 'Create Account', addFunds: 'Add Funds',
+    description: 'Description', amount: 'Amount', date: 'Date', category: 'Category',
+    save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit'
+  }
+};
 
-  const scrollToDownload = () => {
-    document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' });
+// Onboarding
+function Onboarding() {
+  const { setOnboardingCompleted, addAccount, defaultCurrency } = useStore();
+  const [name, setName] = useState('');
+  const lang = useStore(s => s.language);
+  const tx = t[lang];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    addAccount({ name: name.trim(), balance: 0, currency: defaultCurrency, color: '#6366F1', icon: '💳' });
+    setOnboardingCompleted();
   };
 
   return (
-    <div className="app">
-      <Header onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} mobileMenuOpen={mobileMenuOpen} />
-
-      <main>
-        <Hero onGetApp={scrollToDownload} />
-
-        <FeaturesSection />
-
-        <ScreenshotsSection />
-
-        <DownloadSection onShowIphone={() => setShowIphoneModal(true)} />
-
-        <DesktopSection />
-
-        <Footer />
-      </main>
-
-      <AnimatePresence>
-        {showIphoneModal && (
-          <IphoneModal onClose={() => setShowIphoneModal(false)} />
-        )}
-      </AnimatePresence>
+    <div className="onboarding">
+      <div className="onboarding-card">
+        <div className="onboarding-logo">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <rect width="64" height="64" rx="16" fill="url(#grad)" />
+            <path d="M16 32C16 23.16 23.16 16 32 16C40.84 16 48 23.16 48 32" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+            <path d="M32 24V32L40 40" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="32" cy="48" r="4" fill="white"/>
+            <defs>
+              <linearGradient id="grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#6366F1"/><stop offset="1" stopColor="#4F46E5"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1>{tx.welcome}</h1>
+        <p>{tx.welcomeDesc}</p>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={tx.accountName}
+            className="onboarding-input"
+            autoFocus
+          />
+          <button type="submit" className="btn-primary" disabled={!name.trim()}>
+            {tx.createAccount}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
 
-function Header({ onMenuToggle, mobileMenuOpen }: { onMenuToggle: () => void; mobileMenuOpen: boolean }) {
-  const [scrolled, setScrolled] = useState(false);
+// Add Transaction Modal
+function AddTransactionModal({ isOpen, onClose, initialType = 'expense' }: { isOpen: boolean; onClose: () => void; initialType?: TransactionType }) {
+  const { accounts, categories, transactions, addTransaction, language } = useStore();
+  const tx = t[language];
+  const [type, setType] = useState<TransactionType>(initialType);
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+  const [categoryId, setCategoryId] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const filteredCategories = categories.filter(c => c.type === type || c.type === 'both');
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    if (filteredCategories.length > 0 && !categoryId) setCategoryId(filteredCategories[0].id);
+  }, [type, categories]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || !accountId || !categoryId) return;
+    addTransaction({
+      accountId, type, amount: parseFloat(amount),
+      currency: accounts.find(a => a.id === accountId)?.currency || 'RUB',
+      categoryId, description, date
+    });
+    onClose();
+    setAmount(''); setDescription('');
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <header className={`header ${scrolled ? 'scrolled' : ''}`}>
-      <div className="header-content">
-        <div className="logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="url(#grad)" />
-            <path d="M8 16C8 11.58 11.58 8 16 8C20.42 8 24 11.58 24 16" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            <path d="M16 12V16L19 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="16" cy="22" r="2" fill="white" />
-            <defs>
-              <linearGradient id="grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366F1" />
-                <stop offset="1" stopColor="#4F46E5" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <span>FinCalendar</span>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{type === 'expense' ? tx.addExpense : tx.addIncome}</h2>
+          <button className="modal-close" onClick={onClose}><X size={20} /></button>
         </div>
+        <div className="type-tabs">
+          <button className={type === 'expense' ? 'active' : ''} onClick={() => setType('expense')}>
+            <TrendingDown size={16} /> {tx.expense}
+          </button>
+          <button className={type === 'income' ? 'active' : ''} onClick={() => setType('income')}>
+            <TrendingUp size={16} /> {tx.income}
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
+            placeholder={tx.amount} className="form-input" autoFocus step="0.01" />
+          <input type="text" value={description} onChange={e => setDescription(e.target.value)}
+            placeholder={tx.description} className="form-input" />
+          <select value={accountId} onChange={e => setAccountId(e.target.value)} className="form-select">
+            {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+          <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="form-select">
+            {filteredCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+          </select>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="form-input" />
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="btn-secondary">{tx.cancel}</button>
+            <button type="submit" className="btn-primary">{tx.save}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
-        <nav className="desktop-nav">
-          <a href="#features">Возможности</a>
-          <a href="#screenshots">Скриншоты</a>
-          <a href="#download">Скачать</a>
-          <a href="#desktop">ПК версия</a>
-        </nav>
+// Bottom Navigation
+function BottomNav({ onAdd }: { onAdd: () => void }) {
+  const { language } = useStore();
+  const tx = t[language];
+  const navItems = [
+    { path: '/', icon: Home, label: tx.home },
+    { path: '/accounts', icon: CreditCard, label: tx.accounts },
+    { path: '/calendar', icon: Calendar, label: tx.calendar },
+    { path: '/statistics', icon: BarChart2, label: tx.statistics },
+    { path: '/settings', icon: Settings, label: tx.settings },
+  ];
+  const location = useLocation();
+  const navigate = useNavigate();
 
-        <a href="https://github.com/fincalendar/budget-tracker" target="_blank" rel="noopener" className="github-btn desktop-only">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-          <span>GitHub</span>
-        </a>
+  return (
+    <nav className="bottom-nav">
+      {navItems.map(item => (
+        <button key={item.path} onClick={() => navigate(item.path)}
+          className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}>
+          <item.icon size={20} />
+          <span>{item.label}</span>
+        </button>
+      ))}
+      <button onClick={onAdd} className="nav-add">
+        <Plus size={24} />
+      </button>
+    </nav>
+  );
+}
 
-        <button className="mobile-menu-btn" onClick={onMenuToggle}>
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+// Desktop Sidebar
+function DesktopSidebar() {
+  const { language } = useStore();
+  const tx = t[language];
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navItems = [
+    { path: '/', icon: Home, label: tx.home },
+    { path: '/accounts', icon: CreditCard, label: tx.accounts },
+    { path: '/calendar', icon: Calendar, label: tx.calendar },
+    { path: '/statistics', icon: BarChart2, label: tx.statistics },
+    { path: '/settings', icon: Settings, label: tx.settings },
+  ];
+
+  return (
+    <aside className="desktop-sidebar">
+      <div className="sidebar-header">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <rect width="36" height="36" rx="10" fill="url(#sg)" />
+          <path d="M9 18C9 12.5 13.5 8 18 8C22.5 8 27 12.5 27 18" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+          <path d="M18 13V18L21.5 21.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="18" cy="25" r="2.5" fill="white"/>
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop stopColor="#6366F1"/><stop offset="1" stopColor="#4F46E5"/></linearGradient></defs>
+        </svg>
+        <span>FinCalendar</span>
+      </div>
+      <nav className="sidebar-nav">
+        {navItems.map(item => (
+          <button key={item.path} onClick={() => navigate(item.path)}
+            className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}>
+            <item.icon size={20} /><span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+// Dashboard Page
+function DashboardPage() {
+  const { accounts, transactions, categories, language, defaultCurrency } = useStore();
+  const tx = t[language];
+  const [showAdd, setShowAdd] = useState(false);
+  const symbol = CURRENCY_SYMBOLS[defaultCurrency];
+
+  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const recentTx = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+  const getCategory = (id: string) => categories.find(c => c.id === id);
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1>{tx.home}</h1>
+      </div>
+      <div className="balance-card">
+        <span className="balance-label">{tx.totalBalance}</span>
+        <span className="balance-value">{symbol} {totalBalance.toLocaleString()}</span>
+        <div className="balance-row">
+          <div className="balance-mini income">
+            <TrendingUp size={16} /><span>{tx.income}</span><strong>+{symbol}{totalIncome.toLocaleString()}</strong>
+          </div>
+          <div className="balance-mini expense">
+            <TrendingDown size={16} /><span>{tx.expense}</span><strong>-{symbol}{totalExpense.toLocaleString()}</strong>
+          </div>
+        </div>
+      </div>
+      <div className="section">
+        <div className="section-header">
+          <h2>{tx.recentTransactions}</h2>
+        </div>
+        {recentTx.length === 0 ? (
+          <p className="empty-state">{tx.noTransactions}</p>
+        ) : (
+          <div className="transactions-list">
+            {recentTx.map(t => {
+              const cat = getCategory(t.categoryId);
+              return (
+                <div key={t.id} className="transaction-item">
+                  <div className="tx-icon">{cat?.icon || '💳'}</div>
+                  <div className="tx-info">
+                    <span>{t.description || cat?.name}</span>
+                    <small>{new Date(t.date).toLocaleDateString()}</small>
+                  </div>
+                  <span className={`tx-amount ${t.type}`}>
+                    {t.type === 'income' ? '+' : '-'}{symbol}{t.amount.toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      <AddTransactionModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+    </div>
+  );
+}
+
+// Accounts Page
+function AccountsPage() {
+  const { accounts, addAccount, language, defaultCurrency } = useStore();
+  const tx = t[language];
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    addAccount({ name: name.trim(), balance: 0, currency: defaultCurrency, color: '#6366F1', icon: '💳' });
+    setName('');
+    setShowForm(false);
+  };
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1>{tx.accounts}</h1>
+        <button className="btn-primary btn-sm" onClick={() => setShowForm(true)}>
+          <Plus size={16} /> {tx.add}
         </button>
       </div>
-
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.nav
-            className="mobile-nav"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <a href="#features" onClick={onMenuToggle}>Возможности</a>
-            <a href="#screenshots" onClick={onMenuToggle}>Скриншоты</a>
-            <a href="#download" onClick={onMenuToggle}>Скачать</a>
-            <a href="#desktop" onClick={onMenuToggle}>ПК версия</a>
-            <a href="https://github.com/fincalendar/budget-tracker" target="_blank" rel="noopener">GitHub</a>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-    </header>
-  );
-}
-
-function Hero({ onGetApp }: { onGetApp: () => void }) {
-  return (
-    <section className="hero-section">
-      <div className="hero-bg-gradient" />
-      <div className="hero-content">
-        <motion.div
-          className="hero-badge"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <span className="badge-dot" />
-          Version 1.0.0
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          Ваш личный<br />трекер бюджета
-        </motion.h1>
-
-        <motion.p
-          className="hero-subtitle"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          Счета, расходы, доходы, планирование — всё в одном приложении.
-          Доступно для Android, iPhone и ПК.
-        </motion.p>
-
-        <motion.div
-          className="hero-actions"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <button className="btn-primary" onClick={onGetApp}>
-            <Download size={20} />
-            Скачать приложение
-          </button>
-          <a href="#desktop" className="btn-secondary">
-            <Monitor size={20} />
-            Открыть в браузере
-          </a>
-        </motion.div>
-
-        <motion.div
-          className="hero-stats"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <div className="stat">
-            <span className="stat-value">100K+</span>
-            <span className="stat-label">Пользователей</span>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat">
-            <span className="stat-value">4.8</span>
-            <span className="stat-label">Рейтинг</span>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat">
-            <span className="stat-value">100%</span>
-            <span className="stat-label">Приватность</span>
-          </div>
-        </motion.div>
-      </div>
-
-      <motion.div
-        className="hero-phone-mockup"
-        initial={{ opacity: 0, x: 100 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="phone-frame">
-          <div className="phone-screen">
-            <div className="phone-header">
-              <span>FinCalendar</span>
-            </div>
-            <div className="phone-balance">
-              <span>Общий баланс</span>
-              <strong>₽ 127 450</strong>
-            </div>
-            <div className="phone-cards">
-              <div className="phone-card green">
-                <span>Доходы</span>
-                <strong>+₽ 85 000</strong>
-              </div>
-              <div className="phone-card red">
-                <span>Расходы</span>
-                <strong>-₽ 42 500</strong>
-              </div>
-            </div>
-            <div className="phone-transactions">
-              <div className="phone-tx-header">Последние операции</div>
-              {[1, 2, 3].map((_, i) => (
-                <div key={i} className="phone-tx">
-                  <div className="tx-icon">🛒</div>
-                  <div className="tx-info">
-                    <span>Продукты</span>
-                    <small>Сегодня</small>
-                  </div>
-                  <strong>-₽ 2 350</strong>
-                </div>
-              ))}
+      <div className="accounts-grid">
+        {accounts.map(acc => (
+          <div key={acc.id} className="account-card" style={{ borderColor: acc.color }}>
+            <div className="account-icon">{acc.icon}</div>
+            <div className="account-info">
+              <span className="account-name">{acc.name}</span>
+              <span className="account-balance">{CURRENCY_SYMBOLS[acc.currency]} {acc.balance.toLocaleString()}</span>
             </div>
           </div>
-        </div>
-      </motion.div>
-
-      <motion.div
-        className="scroll-indicator"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-      >
-        <ChevronDown size={24} />
-      </motion.div>
-    </section>
-  );
-}
-
-function FeaturesSection() {
-  return (
-    <section id="features" className="features-section">
-      <div className="section-header">
-        <h2>Всё, что нужно для контроля финансов</h2>
-        <p>Мощные функции в простом и понятном интерфейсе</p>
-      </div>
-
-      <div className="features-grid">
-        {features.map((f, i) => (
-          <motion.div
-            key={i}
-            className="feature-card"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <div className="feature-icon">{f.icon}</div>
-            <h3>{f.title}</h3>
-            <p>{f.desc}</p>
-          </motion.div>
         ))}
       </div>
-    </section>
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2>{tx.createAccount}</h2>
+            <form onSubmit={handleSubmit}>
+              <input type="text" value={name} onChange={e => setName(e.target.value)}
+                placeholder={tx.accountName} className="form-input" autoFocus />
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">{tx.cancel}</button>
+                <button type="submit" className="btn-primary">{tx.save}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
-function ScreenshotsSection() {
-  return (
-    <section id="screenshots" className="screenshots-section">
-      <div className="section-header">
-        <h2>Скриншоты приложения</h2>
-        <p>Посмотрите, как выглядит FinCalendar</p>
-      </div>
+// Calendar Page
+function CalendarPage() {
+  const { transactions, language } = useStore();
+  const tx = t[language];
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-      <div className="screenshots-showcase">
-        <div className="screenshot-phone">
-          <div className="screenshot-screen">
-            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=600&fit=crop" alt="Dashboard" />
-          </div>
-          <span>Главная</span>
-        </div>
-        <div className="screenshot-phone">
-          <div className="screenshot-screen">
-            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=600&fit=crop" alt="Statistics" />
-          </div>
-          <span>Статистика</span>
-        </div>
-        <div className="screenshot-phone">
-          <div className="screenshot-screen">
-            <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=300&h=600&fit=crop" alt="Calendar" />
-          </div>
-          <span>Календарь</span>
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+
+  const txByDate = useMemo(() => {
+    const map: Record<string, typeof transactions> = {};
+    transactions.forEach(t => {
+      if (!map[t.date]) map[t.date] = [];
+      map[t.date].push(t);
+    });
+    return map;
+  }, [transactions]);
+
+  const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1>{tx.calendar}</h1>
+        <div className="calendar-nav">
+          <button onClick={prevMonth}>&lt;</button>
+          <span>{currentMonth.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'long', year: 'numeric' })}</span>
+          <button onClick={nextMonth}>&gt;</button>
         </div>
       </div>
-    </section>
+      <div className="calendar-grid">
+        {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map(d => <div key={d} className="calendar-day-header">{d}</div>)}
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} className="calendar-day empty" />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayTx = txByDate[dateStr] || [];
+          const isToday = dateStr === new Date().toISOString().split('T')[0];
+          return (
+            <div key={day} className={`calendar-day ${isToday ? 'today' : ''} ${dayTx.length > 0 ? 'has-events' : ''}`}>
+              <span>{day}</span>
+              {dayTx.length > 0 && <div className="day-dot" />}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
-function DownloadSection({ onShowIphone }: { onShowIphone: () => void }) {
+// Statistics Page
+function StatisticsPage() {
+  const { transactions, categories, language, defaultCurrency } = useStore();
+  const tx = t[language];
+  const symbol = CURRENCY_SYMBOLS[defaultCurrency];
+
+  const stats = useMemo(() => {
+    const byCategory: Record<string, number> = {};
+    transactions.filter(t => t.type === 'expense').forEach(t => {
+      byCategory[t.categoryId] = (byCategory[t.categoryId] || 0) + t.amount;
+    });
+    return Object.entries(byCategory)
+      .map(([catId, amount]) => ({ category: categories.find(c => c.id === catId), amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [transactions, categories]);
+
+  const total = stats.reduce((sum, s) => sum + s.amount, 0);
+
   return (
-    <section id="download" className="download-section">
-      <div className="section-header">
-        <h2>Скачать FinCalendar</h2>
-        <p>Выберите версию для вашего устройства</p>
+    <div className="page">
+      <div className="page-header">
+        <h1>{tx.statistics}</h1>
       </div>
+      {stats.length === 0 ? (
+        <p className="empty-state">{tx.noTransactions}</p>
+      ) : (
+        <div className="stats-list">
+          {stats.map(s => (
+            <div key={s.category?.id} className="stat-item">
+              <div className="stat-icon">{s.category?.icon}</div>
+              <div className="stat-info">
+                <span>{s.category?.name}</span>
+                <div className="stat-bar" style={{ width: `${(s.amount / total) * 100}%`, background: s.category?.color }} />
+              </div>
+              <span className="stat-amount">{symbol}{s.amount.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-      <div className="download-cards">
-        <motion.div
-          className="download-card android"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-        >
-          <div className="download-icon">📱</div>
-          <h3>Android</h3>
-          <p>Установите APK файл на своё устройство</p>
-          <ul className="download-features">
-            <li><CheckCircle size={16} /> Виджет на рабочем столе</li>
-            <li><CheckCircle size={16} /> Умные уведомления</li>
-            <li><CheckCircle size={16} /> Офлайн режим</li>
-          </ul>
-          <a href={APK_URL} download="FinCalendar-v1.0.0.apk" className="btn-download">
-            <Download size={20} />
-            Скачать APK (3.9 MB)
-          </a>
-          <span className="download-note">Android 6.0+</span>
-        </motion.div>
+// Settings Page
+function SettingsPage() {
+  const { language, setLanguage, defaultCurrency, setDefaultCurrency } = useStore();
+  const tx = t[language];
 
-        <motion.div
-          className="download-card iphone"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="download-icon">🍎</div>
-          <h3>iPhone / iPad</h3>
-          <p>Установка через TestFlight или PWA</p>
-          <ul className="download-features">
-            <li><CheckCircle size={16} /> Установка без компьютера</li>
-            <li><CheckCircle size={16} /> PWA — как приложение</li>
-            <li><CheckCircle size={16} /> Обновления через браузер</li>
-          </ul>
-          <button onClick={onShowIphone} className="btn-download">
-            <Smartphone size={20} />
-            Инструкция по установке
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1>{tx.settings}</h1>
+      </div>
+      <div className="settings-list">
+        <div className="setting-item">
+          <span>Язык</span>
+          <select value={language} onChange={e => setLanguage(e.target.value as Language)}>
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div className="setting-item">
+          <span>{tx.currency}</span>
+          <select value={defaultCurrency} onChange={e => setDefaultCurrency(e.target.value as Currency)}>
+            <option value="RUB">₽ RUB</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+          </select>
+        </div>
+      </div>
+      <div className="app-version">FinCalendar v1.0.0</div>
+    </div>
+  );
+}
+
+// Main App
+export default function App() {
+  const [showAdd, setShowAdd] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const onboardingCompleted = useStore(s => s.onboardingCompleted);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
+
+  if (!onboardingCompleted) return <Onboarding />;
+
+  return (
+    <BrowserRouter>
+      <div className={`app-shell ${isDesktop ? 'desktop' : 'mobile'}`}>
+        {isDesktop && <DesktopSidebar />}
+        {!isDesktop && (
+          <header className="mobile-header">
+            <div className="mobile-header-content">
+              <span>FinCalendar</span>
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                <Menu size={24} />
+              </button>
+            </div>
+          </header>
+        )}
+        <main className={`app-main ${isDesktop ? 'desktop' : 'mobile'}`}>
+          <Suspense fallback={<div className="loading">Загрузка...</div>}>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/accounts" element={<AccountsPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/statistics" element={<StatisticsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </Suspense>
+        </main>
+        {!isDesktop && <BottomNav onAdd={() => setShowAdd(true)} />}
+        {isDesktop && (
+          <button className="desktop-fab" onClick={() => setShowAdd(true)}>
+            <Plus size={24} />
           </button>
-          <span className="download-note">iOS 14+</span>
-        </motion.div>
-
-        <motion.div
-          className="download-card web"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="download-icon">💻</div>
-          <h3>Веб-версия</h3>
-          <p>Используйте прямо в браузере</p>
-          <ul className="download-features">
-            <li><CheckCircle size={16} /> Работает везде</li>
-            <li><CheckCircle size={16} /> Нет установки</li>
-            <li><CheckCircle size={16} /> Синхронизация данных</li>
-          </ul>
-          <a href="https://app.fincalendar.ru" className="btn-download">
-            <ArrowRight size={20} />
-            Открыть веб-версию
-          </a>
-          <span className="download-note">Все браузеры</span>
-        </motion.div>
+        )}
+        <AddTransactionModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
       </div>
-    </section>
+    </BrowserRouter>
   );
 }
-
-function DesktopSection() {
-  return (
-    <section id="desktop" className="desktop-section">
-      <div className="desktop-content">
-        <div className="desktop-text">
-          <span className="desktop-label">Для ПК</span>
-          <h2>Полноценная версия для компьютера</h2>
-          <p>
-            Откройте FinCalendar в браузере на Windows, Mac или Linux.
-            Оптимизированный интерфейс для больших экранов с удобной навигацией.
-          </p>
-          <ul className="desktop-features">
-            <li><CheckCircle size={20} /> Адаптивный интерфейс для широких экранов</li>
-            <li><CheckCircle size={20} /> Быстрая навигация с боковым меню</li>
-            <li><CheckCircle size={20} /> Все функции мобильной версии</li>
-            <li><CheckCircle size={20} /> Горячие клавиши для быстрого доступа</li>
-          </ul>
-          <a href="https://app.fincalendar.ru" target="_blank" rel="noopener" className="btn-primary">
-            <Monitor size={20} />
-            Открыть в новой вкладке
-          </a>
-        </div>
-        <motion.div
-          className="desktop-mockup"
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-        >
-          <div className="browser-frame">
-            <div className="browser-header">
-              <div className="browser-dots">
-                <span /><span /><span />
-              </div>
-              <div className="browser-url">app.fincalendar.ru</div>
-            </div>
-            <div className="browser-content">
-              <div className="browser-sidebar">
-                <div className="sidebar-item active">Главная</div>
-                <div className="sidebar-item">Счета</div>
-                <div className="sidebar-item">Календарь</div>
-                <div className="sidebar-item">Статистика</div>
-                <div className="sidebar-item">Настройки</div>
-              </div>
-              <div className="browser-main">
-                <div className="desktop-card-header">Общий баланс</div>
-                <div className="desktop-big-num">₽ 127 450</div>
-                <div className="desktop-cards-row">
-                  <div className="desktop-mini-card green">+₽ 85 000</div>
-                  <div className="desktop-mini-card red">-₽ 42 500</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function IphoneModal({ onClose }: { onClose: () => void }) {
-  return (
-    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="modal-content" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}><X size={24} /></button>
-        <h2>Установка на iPhone / iPad</h2>
-        <p className="modal-subtitle">Для установки FinCalendar на iOS используйте веб-версию (PWA)</p>
-
-        <div className="install-steps">
-          <div className="step">
-            <span className="step-num">1</span>
-            <div>
-              <strong>Откройте веб-версию</strong>
-              <p>Перейдите на <a href="https://app.fincalendar.ru" target="_blank" rel="noopener">app.fincalendar.ru</a> в Safari</p>
-            </div>
-          </div>
-          <div className="step">
-            <span className="step-num">2</span>
-            <div>
-              <strong>Добавьте на главный экран</strong>
-              <p>Нажмите кнопку «Поделиться» → «На главный экран»</p>
-            </div>
-          </div>
-          <div className="step">
-            <span className="step-num">3</span>
-            <div>
-              <strong>Готово!</strong>
-              <p>FinCalendar появится как приложение на вашем Home Screen</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="ios-note">
-          <strong>Важно:</strong> Используйте Safari для установки. Chrome и другие браузеры iOS не поддерживают добавление на главный экран.
-        </div>
-
-        <a href="https://app.fincalendar.ru" target="_blank" rel="noopener" className="btn-primary" style={{ marginTop: '24px', display: 'inline-flex' }}>
-          <ArrowRight size={20} />
-          Открыть веб-версию
-        </a>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="footer-content">
-        <div className="footer-brand">
-          <div className="logo">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="url(#grad-footer)" />
-              <path d="M8 16C8 11.58 11.58 8 16 8C20.42 8 24 11.58 24 16" stroke="white" strokeWidth="2" strokeLinecap="round" />
-              <path d="M16 12V16L19 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="16" cy="22" r="2" fill="white" />
-              <defs>
-                <linearGradient id="grad-footer" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#6366F1" />
-                  <stop offset="1" stopColor="#4F46E5" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <span>FinCalendar</span>
-          </div>
-          <p>Личный трекер бюджета. Все данные хранятся локально на вашем устройстве.</p>
-        </div>
-
-        <div className="footer-links">
-          <div className="footer-col">
-            <h4>Приложение</h4>
-            <a href="#download">Скачать</a>
-            <a href="#features">Возможности</a>
-            <a href="#desktop">Веб-версия</a>
-          </div>
-          <div className="footer-col">
-            <h4>Поддержка</h4>
-            <a href="mailto:support@fincalendar.ru">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-            </a>
-            <a href="https://github.com/fincalendar/budget-tracker" target="_blank" rel="noopener">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-            </a>
-          </div>
-          <div className="footer-col">
-            <h4>Документы</h4>
-            <a href="/privacy">Политика конфиденциальности</a>
-            <a href="/terms">Пользовательское соглашение</a>
-          </div>
-        </div>
-      </div>
-
-      <div className="footer-bottom">
-        <p>© 2026 FinCalendar. Все права защищены.</p>
-      </div>
-    </footer>
-  );
-}
-
-export default App;
