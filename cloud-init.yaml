@@ -1,0 +1,72 @@
+#cloud-config
+
+# FinCalendar — автоматическая настройка сервера
+# Использование: вставить в поле "User data" при создании сервера (Hetzner, DigitalOcean, VK Cloud и др.)
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - nginx
+  - git
+  - curl
+  - certbot
+  - python3-certbot-nginx
+  - ufw
+
+write_files:
+  - path: /etc/nginx/sites-available/fincalendar
+    content: |
+      server {
+          listen 80;
+          listen [::]:80;
+          server_name _;
+
+          root /var/www/fincalendar;
+          index index.html;
+
+          # SPA-роутинг: все пути отдают index.html
+          location / {
+              try_files $uri $uri/ /index.html;
+          }
+
+          # Кэширование статических файлов (JS, CSS, картинки)
+          location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+              expires 1y;
+              add_header Cache-Control "public, immutable";
+          }
+
+          # Service Worker не кэшируется
+          location = /sw.js {
+              add_header Cache-Control "no-cache, no-store, must-revalidate";
+              expires 0;
+          }
+
+          # Gzip
+          gzip on;
+          gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+          gzip_min_length 1024;
+      }
+
+runcmd:
+  # Установка Node.js 20
+  - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  - apt-get install -y nodejs
+
+  # Клонирование репозитория
+  - git clone https://github.com/levkinabas-star/fincalendar-website.git /opt/fincalendar
+  - cd /opt/fincalendar && npm ci && npm run build
+
+  # Публикация сборки
+  - mkdir -p /var/www/fincalendar
+  - cp -r /opt/fincalendar/dist/. /var/www/fincalendar/
+
+  # Настройка nginx
+  - ln -sf /etc/nginx/sites-available/fincalendar /etc/nginx/sites-enabled/fincalendar
+  - rm -f /etc/nginx/sites-enabled/default
+  - nginx -t && systemctl enable nginx && systemctl restart nginx
+
+  # Настройка firewall
+  - ufw allow OpenSSH
+  - ufw allow 'Nginx Full'
+  - ufw --force enable
