@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Home, CreditCard, Calendar, BarChart2, Settings, Plus,
-  TrendingUp, TrendingDown, ArrowLeftRight, Check, X, Menu
+  TrendingUp, TrendingDown, X, Menu
 } from 'lucide-react';
 import './App.css';
 
@@ -187,7 +187,7 @@ function Onboarding() {
 
 // Add Transaction Modal
 function AddTransactionModal({ isOpen, onClose, initialType = 'expense' }: { isOpen: boolean; onClose: () => void; initialType?: TransactionType }) {
-  const { accounts, categories, transactions, addTransaction, language } = useStore();
+  const { accounts, categories, addTransaction, language } = useStore();
   const tx = t[language];
   const [type, setType] = useState<TransactionType>(initialType);
   const [amount, setAmount] = useState('');
