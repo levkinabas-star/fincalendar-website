@@ -1,616 +1,279 @@
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, lazy, Suspense, useMemo, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
-import {
-  Home, CreditCard, Calendar, BarChart2, Settings, Plus,
-  TrendingUp, TrendingDown, X, Menu
-} from 'lucide-react';
-import './App.css';
+import BottomNav from './components/BottomNav';
+import Modal from './components/Modal';
+import TransactionForm from './components/TransactionForm';
+import TransferForm from './components/TransferForm';
+import DebtForm from './components/DebtForm';
+import InstallPrompt from './components/InstallPrompt';
+import Onboarding from './components/Onboarding';
+import ToastContainer from './components/Toast';
+import { useSmartNotifications } from './hooks/useSmartNotifications';
+import { useSupabaseSync } from './hooks/useSupabaseSync';
+import { useStore } from './store';
+import { translations } from './translations';
+import { ArrowLeftRight, TrendingUp, TrendingDown, Coins, Receipt, Home, CreditCard, Calendar, BarChart2, Plus, Settings } from 'lucide-react';
+import { AddTransactionContext } from './contexts/AddTransactionContext';
 
-// Types
-type Currency = 'RUB' | 'USD' | 'EUR';
-type TransactionType = 'income' | 'expense' | 'transfer';
-type Language = 'ru' | 'en';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Accounts = lazy(() => import('./pages/Accounts'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
+const Statistics = lazy(() => import('./pages/Statistics'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
+const Widgets = lazy(() => import('./pages/Widgets'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const UserAgreement = lazy(() => import('./pages/UserAgreement'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const PaymentReturn = lazy(() => import('./pages/PaymentReturn'));
+const Seed = lazy(() => import('./pages/Seed'));
+const ScreenshotFrame = lazy(() => import('./pages/ScreenshotFrame'));
 
-interface Account {
-  id: string;
-  name: string;
-  balance: number;
-  currency: Currency;
-  color: string;
-  icon: string;
-  createdAt: string;
-}
+type AddMode = 'expense' | 'income' | 'transfer';
+type EntityType = 'transaction' | 'debt';
 
-interface Transaction {
-  id: string;
-  accountId: string;
-  type: TransactionType;
-  amount: number;
-  currency: Currency;
-  categoryId: string;
-  description: string;
-  date: string;
-  createdAt: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  nameEn: string;
-  icon: string;
-  type: 'income' | 'expense' | 'both';
-  color: string;
-  isPreset: boolean;
-}
-
-// Store
-interface StoreState {
-  language: Language;
-  defaultCurrency: Currency;
-  accounts: Account[];
-  transactions: Transaction[];
-  categories: Category[];
-  onboardingCompleted: boolean;
-  setLanguage: (lang: Language) => void;
-  setDefaultCurrency: (currency: Currency) => void;
-  addAccount: (account: Omit<Account, 'id' | 'createdAt'>) => void;
-  addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => void;
-  addCategory: (cat: Omit<Category, 'id' | 'isPreset'>) => void;
-  setOnboardingCompleted: () => void;
-}
-
-const CURRENCY_SYMBOLS: Record<Currency, string> = { RUB: '₽', USD: '$', EUR: '€' };
-
-const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
-  { name: 'Продукты', nameEn: 'Food', icon: '🛒', type: 'expense', color: '#10B981', isPreset: true },
-  { name: 'Транспорт', nameEn: 'Transport', icon: '🚗', type: 'expense', color: '#3B82F6', isPreset: true },
-  { name: 'Развлечения', nameEn: 'Entertainment', icon: '🎬', type: 'expense', color: '#8B5CF6', isPreset: true },
-  { name: 'Здоровье', nameEn: 'Health', icon: '💊', type: 'expense', color: '#EF4444', isPreset: true },
-  { name: 'Зарплата', nameEn: 'Salary', icon: '💰', type: 'income', color: '#10B981', isPreset: true },
-  { name: 'Фриланс', nameEn: 'Freelance', icon: '💻', type: 'income', color: '#6366F1', isPreset: true },
-];
-
-export const useStore = create<StoreState>()(
-  persist(
-    (set) => ({
-      language: 'ru',
-      defaultCurrency: 'RUB',
-      accounts: [],
-      transactions: [],
-      categories: DEFAULT_CATEGORIES.map((c, i) => ({ ...c, id: `cat-${i}` })),
-      onboardingCompleted: false,
-      setLanguage: (lang) => set({ language: lang }),
-      setDefaultCurrency: (currency) => set({ defaultCurrency: currency }),
-      addAccount: (account) => set((state) => ({
-        accounts: [...state.accounts, { ...account, id: uuidv4(), createdAt: new Date().toISOString() }]
-      })),
-      addTransaction: (tx) => set((state) => {
-        const newTx = { ...tx, id: uuidv4(), createdAt: new Date().toISOString() };
-        const updatedAccounts = state.accounts.map(acc => {
-          if (acc.id !== tx.accountId) return acc;
-          const delta = tx.type === 'income' ? tx.amount : tx.type === 'expense' ? -tx.amount : 0;
-          return { ...acc, balance: acc.balance + delta };
-        });
-        return { transactions: [...state.transactions, newTx], accounts: updatedAccounts };
-      }),
-      addCategory: (cat) => set((state) => ({
-        categories: [...state.categories, { ...cat, id: uuidv4(), isPreset: false }]
-      })),
-      setOnboardingCompleted: () => set({ onboardingCompleted: true }),
-    }),
-    { name: 'fincalendar-storage' }
-  )
-);
-
-// Translations
-const t = {
-  ru: {
-    home: 'Главная', accounts: 'Счета', calendar: 'Календарь',
-    statistics: 'Статистика', settings: 'Настройки',
-    addExpense: 'Расход', addIncome: 'Доход', add: 'Добавить',
-    totalBalance: 'Общий баланс', income: 'Доходы', expense: 'Расходы',
-    recentTransactions: 'Последние операции', noTransactions: 'Нет операций',
-    accountName: 'Название счёта', balance: 'Баланс', currency: 'Валюта',
-    continue: 'Продолжить', welcome: 'Добро пожаловать в FinCalendar',
-    welcomeDesc: 'Ваш личный трекер бюджета. Начните с создания счёта.',
-    createAccount: 'Создать счёт', addFunds: 'Добавить средства',
-    description: 'Описание', amount: 'Сумма', date: 'Дата', category: 'Категория',
-    save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', edit: 'Редактировать'
-  },
-  en: {
-    home: 'Home', accounts: 'Accounts', calendar: 'Calendar',
-    statistics: 'Statistics', settings: 'Settings',
-    addExpense: 'Expense', addIncome: 'Income', add: 'Add',
-    totalBalance: 'Total Balance', income: 'Income', expense: 'Expenses',
-    recentTransactions: 'Recent Transactions', noTransactions: 'No transactions',
-    accountName: 'Account Name', balance: 'Balance', currency: 'Currency',
-    continue: 'Continue', welcome: 'Welcome to FinCalendar',
-    welcomeDesc: 'Your personal budget tracker. Start by creating an account.',
-    createAccount: 'Create Account', addFunds: 'Add Funds',
-    description: 'Description', amount: 'Amount', date: 'Date', category: 'Category',
-    save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit'
-  }
-};
-
-// Onboarding
-function Onboarding() {
-  const { setOnboardingCompleted, addAccount, defaultCurrency } = useStore();
-  const [name, setName] = useState('');
-  const lang = useStore(s => s.language);
-  const tx = t[lang];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    addAccount({ name: name.trim(), balance: 0, currency: defaultCurrency, color: '#6366F1', icon: '💳' });
-    setOnboardingCompleted();
-  };
-
-  return (
-    <div className="onboarding">
-      <div className="onboarding-card">
-        <div className="onboarding-logo">
-          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-            <rect width="64" height="64" rx="16" fill="url(#grad)" />
-            <path d="M16 32C16 23.16 23.16 16 32 16C40.84 16 48 23.16 48 32" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-            <path d="M32 24V32L40 40" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="32" cy="48" r="4" fill="white"/>
-            <defs>
-              <linearGradient id="grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366F1"/><stop offset="1" stopColor="#4F46E5"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <h1>{tx.welcome}</h1>
-        <p>{tx.welcomeDesc}</p>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={tx.accountName}
-            className="onboarding-input"
-            autoFocus
-          />
-          <button type="submit" className="btn-primary" disabled={!name.trim()}>
-            {tx.createAccount}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// Add Transaction Modal
-function AddTransactionModal({ isOpen, onClose, initialType = 'expense' }: { isOpen: boolean; onClose: () => void; initialType?: TransactionType }) {
-  const { accounts, categories, addTransaction, language } = useStore();
-  const tx = t[language];
-  const [type, setType] = useState<TransactionType>(initialType);
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [accountId, setAccountId] = useState(accounts[0]?.id || '');
-  const [categoryId, setCategoryId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-
-  const filteredCategories = categories.filter(c => c.type === type || c.type === 'both');
-
-  useEffect(() => {
-    if (filteredCategories.length > 0 && !categoryId) setCategoryId(filteredCategories[0].id);
-  }, [type, categories]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !accountId || !categoryId) return;
-    addTransaction({
-      accountId, type, amount: parseFloat(amount),
-      currency: accounts.find(a => a.id === accountId)?.currency || 'RUB',
-      categoryId, description, date
-    });
-    onClose();
-    setAmount(''); setDescription('');
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{type === 'expense' ? tx.addExpense : tx.addIncome}</h2>
-          <button className="modal-close" onClick={onClose}><X size={20} /></button>
-        </div>
-        <div className="type-tabs">
-          <button className={type === 'expense' ? 'active' : ''} onClick={() => setType('expense')}>
-            <TrendingDown size={16} /> {tx.expense}
-          </button>
-          <button className={type === 'income' ? 'active' : ''} onClick={() => setType('income')}>
-            <TrendingUp size={16} /> {tx.income}
-          </button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
-            placeholder={tx.amount} className="form-input" autoFocus step="0.01" />
-          <input type="text" value={description} onChange={e => setDescription(e.target.value)}
-            placeholder={tx.description} className="form-input" />
-          <select value={accountId} onChange={e => setAccountId(e.target.value)} className="form-select">
-            {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-          <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="form-select">
-            {filteredCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-          </select>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="form-input" />
-          <div className="modal-actions">
-            <button type="button" onClick={onClose} className="btn-secondary">{tx.cancel}</button>
-            <button type="submit" className="btn-primary">{tx.save}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// Bottom Navigation
-function BottomNav({ onAdd }: { onAdd: () => void }) {
-  const { language } = useStore();
-  const tx = t[language];
-  const navItems = [
-    { path: '/', icon: Home, label: tx.home },
-    { path: '/accounts', icon: CreditCard, label: tx.accounts },
-    { path: '/calendar', icon: Calendar, label: tx.calendar },
-    { path: '/statistics', icon: BarChart2, label: tx.statistics },
-    { path: '/settings', icon: Settings, label: tx.settings },
-  ];
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  return (
-    <nav className="bottom-nav">
-      {navItems.map(item => (
-        <button key={item.path} onClick={() => navigate(item.path)}
-          className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}>
-          <item.icon size={20} />
-          <span>{item.label}</span>
-        </button>
-      ))}
-      <button onClick={onAdd} className="nav-add">
-        <Plus size={24} />
-      </button>
-    </nav>
-  );
-}
-
-// Desktop Sidebar
-function DesktopSidebar() {
-  const { language } = useStore();
-  const tx = t[language];
-  const navigate = useNavigate();
-  const location = useLocation();
-  const navItems = [
-    { path: '/', icon: Home, label: tx.home },
-    { path: '/accounts', icon: CreditCard, label: tx.accounts },
-    { path: '/calendar', icon: Calendar, label: tx.calendar },
-    { path: '/statistics', icon: BarChart2, label: tx.statistics },
-    { path: '/settings', icon: Settings, label: tx.settings },
-  ];
-
-  return (
-    <aside className="desktop-sidebar">
-      <div className="sidebar-header">
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-          <rect width="36" height="36" rx="10" fill="url(#sg)" />
-          <path d="M9 18C9 12.5 13.5 8 18 8C22.5 8 27 12.5 27 18" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-          <path d="M18 13V18L21.5 21.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="18" cy="25" r="2.5" fill="white"/>
-          <defs><linearGradient id="sg" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse"><stop stopColor="#6366F1"/><stop offset="1" stopColor="#4F46E5"/></linearGradient></defs>
-        </svg>
-        <span>FinCalendar</span>
-      </div>
-      <nav className="sidebar-nav">
-        {navItems.map(item => (
-          <button key={item.path} onClick={() => navigate(item.path)}
-            className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}>
-            <item.icon size={20} /><span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
-    </aside>
-  );
-}
-
-// Dashboard Page
-function DashboardPage() {
-  const { accounts, transactions, categories, language, defaultCurrency } = useStore();
-  const tx = t[language];
-  const [showAdd, setShowAdd] = useState(false);
-  const symbol = CURRENCY_SYMBOLS[defaultCurrency];
-
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const recentTx = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-
-  const getCategory = (id: string) => categories.find(c => c.id === id);
-
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1>{tx.home}</h1>
-      </div>
-      <div className="balance-card">
-        <span className="balance-label">{tx.totalBalance}</span>
-        <span className="balance-value">{symbol} {totalBalance.toLocaleString()}</span>
-        <div className="balance-row">
-          <div className="balance-mini income">
-            <TrendingUp size={16} /><span>{tx.income}</span><strong>+{symbol}{totalIncome.toLocaleString()}</strong>
-          </div>
-          <div className="balance-mini expense">
-            <TrendingDown size={16} /><span>{tx.expense}</span><strong>-{symbol}{totalExpense.toLocaleString()}</strong>
-          </div>
-        </div>
-      </div>
-      <div className="section">
-        <div className="section-header">
-          <h2>{tx.recentTransactions}</h2>
-        </div>
-        {recentTx.length === 0 ? (
-          <p className="empty-state">{tx.noTransactions}</p>
-        ) : (
-          <div className="transactions-list">
-            {recentTx.map(t => {
-              const cat = getCategory(t.categoryId);
-              return (
-                <div key={t.id} className="transaction-item">
-                  <div className="tx-icon">{cat?.icon || '💳'}</div>
-                  <div className="tx-info">
-                    <span>{t.description || cat?.name}</span>
-                    <small>{new Date(t.date).toLocaleDateString()}</small>
-                  </div>
-                  <span className={`tx-amount ${t.type}`}>
-                    {t.type === 'income' ? '+' : '-'}{symbol}{t.amount.toLocaleString()}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      <AddTransactionModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
-    </div>
-  );
-}
-
-// Accounts Page
-function AccountsPage() {
-  const { accounts, addAccount, language, defaultCurrency } = useStore();
-  const tx = t[language];
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    addAccount({ name: name.trim(), balance: 0, currency: defaultCurrency, color: '#6366F1', icon: '💳' });
-    setName('');
-    setShowForm(false);
-  };
-
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1>{tx.accounts}</h1>
-        <button className="btn-primary btn-sm" onClick={() => setShowForm(true)}>
-          <Plus size={16} /> {tx.add}
-        </button>
-      </div>
-      <div className="accounts-grid">
-        {accounts.map(acc => (
-          <div key={acc.id} className="account-card" style={{ borderColor: acc.color }}>
-            <div className="account-icon">{acc.icon}</div>
-            <div className="account-info">
-              <span className="account-name">{acc.name}</span>
-              <span className="account-balance">{CURRENCY_SYMBOLS[acc.currency]} {acc.balance.toLocaleString()}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>{tx.createAccount}</h2>
-            <form onSubmit={handleSubmit}>
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                placeholder={tx.accountName} className="form-input" autoFocus />
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">{tx.cancel}</button>
-                <button type="submit" className="btn-primary">{tx.save}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Calendar Page
-function CalendarPage() {
-  const { transactions, language } = useStore();
-  const tx = t[language];
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-
-  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-
-  const txByDate = useMemo(() => {
-    const map: Record<string, typeof transactions> = {};
-    transactions.forEach(t => {
-      if (!map[t.date]) map[t.date] = [];
-      map[t.date].push(t);
-    });
-    return map;
-  }, [transactions]);
-
-  const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1>{tx.calendar}</h1>
-        <div className="calendar-nav">
-          <button onClick={prevMonth}>&lt;</button>
-          <span>{currentMonth.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'long', year: 'numeric' })}</span>
-          <button onClick={nextMonth}>&gt;</button>
-        </div>
-      </div>
-      <div className="calendar-grid">
-        {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map(d => <div key={d} className="calendar-day-header">{d}</div>)}
-        {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} className="calendar-day empty" />)}
-        {Array.from({ length: daysInMonth }).map((_, i) => {
-          const day = i + 1;
-          const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const dayTx = txByDate[dateStr] || [];
-          const isToday = dateStr === new Date().toISOString().split('T')[0];
-          return (
-            <div key={day} className={`calendar-day ${isToday ? 'today' : ''} ${dayTx.length > 0 ? 'has-events' : ''}`}>
-              <span>{day}</span>
-              {dayTx.length > 0 && <div className="day-dot" />}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Statistics Page
-function StatisticsPage() {
-  const { transactions, categories, language, defaultCurrency } = useStore();
-  const tx = t[language];
-  const symbol = CURRENCY_SYMBOLS[defaultCurrency];
-
-  const stats = useMemo(() => {
-    const byCategory: Record<string, number> = {};
-    transactions.filter(t => t.type === 'expense').forEach(t => {
-      byCategory[t.categoryId] = (byCategory[t.categoryId] || 0) + t.amount;
-    });
-    return Object.entries(byCategory)
-      .map(([catId, amount]) => ({ category: categories.find(c => c.id === catId), amount }))
-      .sort((a, b) => b.amount - a.amount);
-  }, [transactions, categories]);
-
-  const total = stats.reduce((sum, s) => sum + s.amount, 0);
-
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1>{tx.statistics}</h1>
-      </div>
-      {stats.length === 0 ? (
-        <p className="empty-state">{tx.noTransactions}</p>
-      ) : (
-        <div className="stats-list">
-          {stats.map(s => (
-            <div key={s.category?.id} className="stat-item">
-              <div className="stat-icon">{s.category?.icon}</div>
-              <div className="stat-info">
-                <span>{s.category?.name}</span>
-                <div className="stat-bar" style={{ width: `${(s.amount / total) * 100}%`, background: s.category?.color }} />
-              </div>
-              <span className="stat-amount">{symbol}{s.amount.toLocaleString()}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Settings Page
-function SettingsPage() {
-  const { language, setLanguage, defaultCurrency, setDefaultCurrency } = useStore();
-  const tx = t[language];
-
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1>{tx.settings}</h1>
-      </div>
-      <div className="settings-list">
-        <div className="setting-item">
-          <span>Язык</span>
-          <select value={language} onChange={e => setLanguage(e.target.value as Language)}>
-            <option value="ru">Русский</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div className="setting-item">
-          <span>{tx.currency}</span>
-          <select value={defaultCurrency} onChange={e => setDefaultCurrency(e.target.value as Currency)}>
-            <option value="RUB">₽ RUB</option>
-            <option value="USD">$ USD</option>
-            <option value="EUR">€ EUR</option>
-          </select>
-        </div>
-      </div>
-      <div className="app-version">FinCalendar v1.0.0</div>
-    </div>
-  );
-}
-
-// Main App
 export default function App() {
   const [showAdd, setShowAdd] = useState(false);
+  const [entityType, setEntityType] = useState<EntityType>('transaction');
+  const [addMode, setAddMode] = useState<AddMode>('expense');
+  const [initialDate, setInitialDate] = useState<string | undefined>();
+  const language = useStore((s) => s.language);
+  const t = translations[language];
+  const onboardingCompleted = useStore((s) => s.onboardingCompleted);
+
+  const openAdd = useCallback((mode: AddMode = 'expense', date?: string) => {
+    setEntityType('transaction');
+    setAddMode(mode);
+    setInitialDate(date);
+    setShowAdd(true);
+  }, []);
+
+  const TABS = useMemo<{ mode: AddMode; label: string; icon: React.ReactNode; color: string }[]>(() => [
+    { mode: 'expense', label: t.addExpense, icon: <TrendingDown size={14} />, color: '#EF4444' },
+    { mode: 'income', label: t.addIncome, icon: <TrendingUp size={14} />, color: '#10B981' },
+    { mode: 'transfer', label: language === 'ru' ? 'Перевод' : 'Transfer', icon: <ArrowLeftRight size={14} />, color: '#3B82F6' },
+  ], [language, t]);
+
+  const ENTITY_TABS = useMemo<{ type: EntityType; label: string; icon: React.ReactNode }[]>(() => [
+    { type: 'transaction', label: language === 'ru' ? 'Операция' : 'Transaction', icon: <Receipt size={14} /> },
+    { type: 'debt', label: language === 'ru' ? 'Долг' : 'Debt', icon: <Coins size={14} /> },
+  ], [language]);
+
+  const { toasts, dismissToast } = useSmartNotifications();
+  useSupabaseSync();
+
+  if (!onboardingCompleted) {
+    return <Onboarding />;
+  }
+
+  return (
+    <BrowserRouter>
+      <AddTransactionContext.Provider value={{ openAdd }}>
+        <AppShell openAdd={openAdd} showAdd={showAdd} setShowAdd={setShowAdd} entityType={entityType} setEntityType={setEntityType} addMode={addMode} setAddMode={setAddMode} initialDate={initialDate} TABS={TABS} ENTITY_TABS={ENTITY_TABS} language={language} t={t} toasts={toasts} dismissToast={dismissToast}>
+          <Suspense fallback={<div style={{ height: '100vh', background: '#07070F' }} />}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/statistics" element={<Statistics />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/widgets" element={<Widgets />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/legal" element={<UserAgreement />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/payment-return" element={<PaymentReturn />} />
+              <Route path="/seed" element={<Seed />} />
+              <Route path="/screenshot-frame" element={<ScreenshotFrame />} />
+            </Routes>
+          </Suspense>
+        </AppShell>
+      </AddTransactionContext.Provider>
+    </BrowserRouter>
+  );
+}
+
+type AppShellProps = {
+  children: React.ReactNode;
+  openAdd: (mode: 'expense' | 'income' | 'transfer', date?: string) => void;
+  showAdd: boolean;
+  setShowAdd: (v: boolean) => void;
+  entityType: EntityType;
+  setEntityType: (v: EntityType) => void;
+  addMode: AddMode;
+  setAddMode: (v: AddMode) => void;
+  initialDate?: string;
+  TABS: { mode: AddMode; label: string; icon: React.ReactNode; color: string }[];
+  ENTITY_TABS: { type: EntityType; label: string; icon: React.ReactNode }[];
+  language: string;
+  t: any;
+  toasts: any[];
+  dismissToast: (id: string) => void;
+};
+
+function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntityType, addMode, setAddMode, initialDate, TABS, ENTITY_TABS, language, t, toasts, dismissToast }: AppShellProps) {
   const [isDesktop, setIsDesktop] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const onboardingCompleted = useStore(s => s.onboardingCompleted);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    const checkDesktop = () => {
+      const desktop = window.innerWidth >= 768;
+      setIsDesktop(desktop);
+      document.body.classList.toggle('mobile-mode', !desktop);
+    };
     checkDesktop();
     window.addEventListener('resize', checkDesktop);
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  if (!onboardingCompleted) return <Onboarding />;
+  const navItems = [
+    { path: '/', icon: Home, label: t.home },
+    { path: '/accounts', icon: CreditCard, label: t.accounts },
+    { path: '/calendar', icon: Calendar, label: t.calendar },
+    { path: '/statistics', icon: BarChart2, label: t.statistics },
+    { path: '/settings', icon: Settings, label: t.settings },
+  ];
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <BrowserRouter>
-      <div className={`app-shell ${isDesktop ? 'desktop' : 'mobile'}`}>
-        {isDesktop && <DesktopSidebar />}
-        {!isDesktop && (
-          <header className="mobile-header">
-            <div className="mobile-header-content">
-              <span>FinCalendar</span>
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                <Menu size={24} />
-              </button>
-            </div>
-          </header>
-        )}
-        <main className={`app-main ${isDesktop ? 'desktop' : 'mobile'}`}>
-          <Suspense fallback={<div className="loading">Загрузка...</div>}>
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/accounts" element={<AccountsPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/statistics" element={<StatisticsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </Suspense>
-        </main>
-        {!isDesktop && <BottomNav onAdd={() => setShowAdd(true)} />}
+    <>
+      <InstallPrompt />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      <div className={isDesktop ? 'app-shell-desktop' : 'app-shell-mobile'}>
         {isDesktop && (
-          <button className="desktop-fab" onClick={() => setShowAdd(true)}>
-            <Plus size={24} />
-          </button>
+          <DesktopSidebar navItems={navItems} isActive={isActive} onNavigate={navigate} />
         )}
-        <AddTransactionModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+
+        <main className={isDesktop ? 'app-main-desktop' : 'app-main-mobile'}>
+          {children}
+        </main>
+
+        {!isDesktop && (
+          <BottomNav onAddTransaction={() => openAdd('expense')} />
+        )}
       </div>
-    </BrowserRouter>
+
+      {isDesktop && (
+        <button
+          className="desktop-fab"
+          onClick={() => openAdd('expense')}
+        >
+          <Plus size={24} />
+        </button>
+      )}
+
+      <Modal
+        isOpen={showAdd}
+        onClose={() => setShowAdd(false)}
+        title=" "
+        fullHeight
+      >
+        <div className="px-5 -mt-2 mb-3">
+          <div className="flex rounded-2xl p-1 gap-1" style={{ background: '#0A0A1C' }}>
+            {ENTITY_TABS.map((tab) => (
+              <button
+                key={tab.type}
+                onClick={() => setEntityType(tab.type)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all active-scale"
+                style={{
+                  background: entityType === tab.type
+                    ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)'
+                    : 'transparent',
+                  color: entityType === tab.type ? 'white' : '#64748B',
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {entityType === 'debt' ? (
+          <DebtForm onClose={() => setShowAdd(false)} />
+        ) : (
+          <>
+            <div className="px-5 mb-4">
+              <div className="flex rounded-2xl p-1 gap-1" style={{ background: '#131325' }}>
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.mode}
+                    onClick={() => setAddMode(tab.mode)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all active-scale"
+                    style={{
+                      background: addMode === tab.mode ? tab.color : 'transparent',
+                      color: addMode === tab.mode ? 'white' : '#64748B',
+                    }}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {addMode === 'transfer' ? (
+              <TransferForm onClose={() => setShowAdd(false)} />
+            ) : (
+              <TransactionForm
+                key={addMode + (initialDate ?? '')}
+                initialType={addMode as 'income' | 'expense'}
+                initialDate={initialDate}
+                onClose={() => setShowAdd(false)}
+              />
+            )}
+          </>
+        )}
+      </Modal>
+    </>
+  );
+}
+
+function DesktopSidebar({
+  navItems,
+  isActive,
+  onNavigate,
+}: {
+  navItems: { path: string; icon: any; label: string }[];
+  isActive: (path: string) => boolean;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <aside className="desktop-sidebar">
+      <div className="sidebar-header">
+        <div className="sidebar-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#sidebar-grad)" />
+            <path d="M8 16C8 11.58 11.58 8 16 8C20.42 8 24 11.58 24 16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <path d="M16 12V16L19 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="16" cy="22" r="2" fill="white" />
+            <defs>
+              <linearGradient id="sidebar-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#6366F1" />
+                <stop offset="1" stopColor="#4F46E5" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span>FinCalendar</span>
+        </div>
+      </div>
+
+      <nav className="sidebar-nav">
+        {navItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => onNavigate(item.path)}
+            className={`sidebar-nav-item ${isActive(item.path) ? 'active' : ''}`}
+          >
+            <item.icon size={20} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </aside>
   );
 }
