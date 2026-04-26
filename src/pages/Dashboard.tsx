@@ -10,6 +10,7 @@ import TransactionForm from '../components/TransactionForm';
 import TransferForm from '../components/TransferForm';
 import EditDebtPaymentForm from '../components/EditDebtPaymentForm';
 import PlannedExpenseForm from '../components/PlannedExpenseForm';
+import AccountForm from '../components/AccountForm';
 import { Transaction, Debt, DebtPayment, PlannedExpense, ScheduledPayment, Category, Account } from '../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const [editingTransfer, setEditingTransfer] = useState<Transaction | null>(null);
   const [editingPe, setEditingPe] = useState<PlannedExpense | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [editingAccountFromDashboard, setEditingAccountFromDashboard] = useState<Account | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [editingDebtPayment, setEditingDebtPayment] = useState<{ payment: DebtPayment; debt: Debt } | null>(null);
   const [deletingDebtPayment, setDeletingDebtPayment] = useState<{ debtId: string; paymentId: string } | null>(null);
@@ -949,6 +951,29 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* Quick actions */}
+              <div className="flex gap-2 mb-5">
+                <button
+                  onClick={() => {
+                    setEditingAccountFromDashboard(acc);
+                    setSelectedAccountId(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 active-scale"
+                  style={{ background: '#1E1E38', border: '1px solid #2A2A4A', color: '#94A3B8' }}
+                >
+                  <Pencil size={14} />
+                  {language === 'ru' ? 'Редактировать' : 'Edit'}
+                </button>
+                <button
+                  onClick={() => { setSelectedAccountId(null); navigate('/accounts'); }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 active-scale"
+                  style={{ background: '#1E1E38', border: '1px solid #2A2A4A', color: '#94A3B8' }}
+                >
+                  <ChevronRight size={14} />
+                  {language === 'ru' ? 'Все счета' : 'All accounts'}
+                </button>
+              </div>
+
               {/* Operations for this account */}
               {accountItems.length === 0 ? (
                 <div className="text-center py-10 text-slate-500">
@@ -1098,6 +1123,21 @@ export default function Dashboard() {
           </Modal>
         );
       })()}
+
+      {/* Edit Account Modal (opened from account card) */}
+      <Modal
+        isOpen={!!editingAccountFromDashboard}
+        onClose={() => setEditingAccountFromDashboard(null)}
+        title={language === 'ru' ? 'Редактировать счёт' : 'Edit Account'}
+        fullHeight
+      >
+        {editingAccountFromDashboard && (
+          <AccountForm
+            account={editingAccountFromDashboard}
+            onClose={() => setEditingAccountFromDashboard(null)}
+          />
+        )}
+      </Modal>
 
       {/* Edit Transfer Modal */}
       <Modal
