@@ -12,7 +12,7 @@ import { useSmartNotifications } from './hooks/useSmartNotifications';
 import { useSupabaseSync } from './hooks/useSupabaseSync';
 import { useStore } from './store';
 import { translations } from './translations';
-import { ArrowLeftRight, TrendingUp, TrendingDown, Coins, Receipt, Home, CreditCard, Calendar, BarChart2, Plus, Settings } from 'lucide-react';
+import { ArrowLeftRight, TrendingUp, TrendingDown, Coins, Receipt, Home, CreditCard, Calendar, BarChart2, Plus, Settings, Smartphone } from 'lucide-react';
 import { AddTransactionContext } from './contexts/AddTransactionContext';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -27,6 +27,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const PaymentReturn = lazy(() => import('./pages/PaymentReturn'));
 const Seed = lazy(() => import('./pages/Seed'));
 const ScreenshotFrame = lazy(() => import('./pages/ScreenshotFrame'));
+const Download = lazy(() => import('./pages/Download'));
 
 type AddMode = 'expense' | 'income' | 'transfer';
 type EntityType = 'transaction' | 'debt';
@@ -83,6 +84,7 @@ export default function App() {
               <Route path="/payment-return" element={<PaymentReturn />} />
               <Route path="/seed" element={<Seed />} />
               <Route path="/screenshot-frame" element={<ScreenshotFrame />} />
+              <Route path="/download" element={<Download />} />
             </Routes>
           </Suspense>
         </AppShell>
@@ -133,6 +135,10 @@ function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntit
     { path: '/settings', icon: Settings, label: t.settings },
   ];
 
+  const bottomNavItems = [
+    { path: '/download', icon: Smartphone, label: language === 'ru' ? 'Скачать' : 'Download' },
+  ];
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
@@ -145,7 +151,7 @@ function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntit
 
       <div className={isDesktop ? 'app-shell-desktop' : 'app-shell-mobile'}>
         {isDesktop && (
-          <DesktopSidebar navItems={navItems} isActive={isActive} onNavigate={navigate} />
+          <DesktopSidebar navItems={navItems} bottomNavItems={bottomNavItems} isActive={isActive} onNavigate={navigate} />
         )}
 
         <main className={isDesktop ? 'app-main-desktop' : 'app-main-mobile'}>
@@ -235,10 +241,12 @@ function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntit
 
 function DesktopSidebar({
   navItems,
+  bottomNavItems,
   isActive,
   onNavigate,
 }: {
   navItems: { path: string; icon: any; label: string }[];
+  bottomNavItems: { path: string; icon: any; label: string }[];
   isActive: (path: string) => boolean;
   onNavigate: (path: string) => void;
 }) {
@@ -263,6 +271,25 @@ function DesktopSidebar({
           </button>
         ))}
       </nav>
+
+      {/* Bottom section: download */}
+      <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        {bottomNavItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => onNavigate(item.path)}
+            className={`sidebar-nav-item ${isActive(item.path) ? 'active' : ''}`}
+            style={{
+              background: isActive(item.path) ? undefined : 'linear-gradient(135deg, #4F46E520 0%, #7C3AED15 100%)',
+              color: isActive(item.path) ? undefined : '#8B7CF8',
+              border: '1px solid rgba(99,102,241,0.2)',
+            }}
+          >
+            <item.icon size={20} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
     </aside>
   );
 }
