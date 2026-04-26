@@ -12,7 +12,7 @@ import { useSmartNotifications } from './hooks/useSmartNotifications';
 import { useSupabaseSync } from './hooks/useSupabaseSync';
 import { useStore } from './store';
 import { translations } from './translations';
-import { ArrowLeftRight, TrendingUp, TrendingDown, Coins, Receipt, Home, CreditCard, Calendar, BarChart2, Plus, Settings, Smartphone } from 'lucide-react';
+import { ArrowLeftRight, TrendingUp, TrendingDown, Coins, Receipt, Home, CreditCard, Calendar, BarChart2, Plus, Settings, Smartphone, Monitor } from 'lucide-react';
 import { AddTransactionContext } from './contexts/AddTransactionContext';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -93,6 +93,8 @@ export default function App() {
   );
 }
 
+type ViewMode = 'pc' | 'phone';
+
 type AppShellProps = {
   children: React.ReactNode;
   openAdd: (mode: 'expense' | 'income' | 'transfer', date?: string) => void;
@@ -113,6 +115,7 @@ type AppShellProps = {
 
 function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntityType, addMode, setAddMode, initialDate, TABS, ENTITY_TABS, language, t, toasts, dismissToast }: AppShellProps) {
   const [isDesktop, setIsDesktop] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('pc');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -151,19 +154,31 @@ function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntit
 
       <div className={isDesktop ? 'app-shell-desktop' : 'app-shell-mobile'}>
         {isDesktop && (
-          <DesktopSidebar navItems={navItems} bottomNavItems={bottomNavItems} isActive={isActive} onNavigate={navigate} />
+          <DesktopSidebar navItems={navItems} bottomNavItems={bottomNavItems} isActive={isActive} onNavigate={navigate} viewMode={viewMode} setViewMode={setViewMode} language={language} />
         )}
 
-        <main className={isDesktop ? 'app-main-desktop' : 'app-main-mobile'}>
-          {isDesktop ? <div className="desktop-page-container">{children}</div> : children}
-        </main>
+        {isDesktop && viewMode === 'phone' ? (
+          <div className="phone-frame-outer">
+            <div className="phone-frame-device">
+              <div className="phone-frame-notch" />
+              <div className="phone-frame-screen">
+                {children}
+                <BottomNav onAddTransaction={() => openAdd('expense')} />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <main className={isDesktop ? 'app-main-desktop' : 'app-main-mobile'}>
+            {isDesktop ? <div className="desktop-page-container">{children}</div> : children}
+          </main>
+        )}
 
         {!isDesktop && (
           <BottomNav onAddTransaction={() => openAdd('expense')} />
         )}
       </div>
 
-      {isDesktop && (
+      {isDesktop && viewMode === 'pc' && (
         <button
           className="desktop-fab"
           onClick={() => openAdd('expense')}
@@ -244,12 +259,42 @@ function DesktopSidebar({
   bottomNavItems,
   isActive,
   onNavigate,
+  viewMode,
+  setViewMode,
+  language,
 }: {
   navItems: { path: string; icon: any; label: string }[];
   bottomNavItems: { path: string; icon: any; label: string }[];
   isActive: (path: string) => boolean;
   onNavigate: (path: string) => void;
+  viewMode: ViewMode;
+  setViewMode: (v: ViewMode) => void;
+  language: string;
 }) {
+  const accounts = useStore((s) => s.accounts);
+  const defaultCurrency = useStore((s) => s.defaultCurrency);
+  const transactions = useStore((s) => s.transactions);
+
+  const now = new Date();
+  const monthStartStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const monthEndStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+
+  let monthIncome = 0, monthExpense = 0;
+  for (const tx of transactions) {
+    if (tx.date < monthStartStr || tx.date > monthEndStr) continue;
+    if (tx.type === 'income') monthIncome += tx.amount;
+    else if (tx.type === 'expense') monthExpense += tx.amount;
+  }
+
+  const currencySymbols: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', GBP: '£', KZT: '₸', CNY: '¥', UAH: '₴', BYN: 'Br', AED: 'د.إ', TRY: '₺' };
+  const sym = currencySymbols[defaultCurrency] ?? defaultCurrency;
+  const fmt = (n: number) => {
+    if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+    return n.toFixed(0);
+  };
+
   return (
     <aside className="desktop-sidebar">
       <div className="sidebar-header">
@@ -257,6 +302,44 @@ function DesktopSidebar({
           <img src="/icon-512.png" alt="FinCalendar" width="36" height="36" style={{ borderRadius: 10, objectFit: 'cover' }} />
           <span>FinCalendar</span>
         </div>
+      </div>
+
+      {/* Balance stats card */}
+      {accounts.length > 0 && (
+        <div className="sidebar-stats-card">
+          <p style={{ fontSize: 10, color: '#4B5563', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            {language === 'ru' ? 'Общий баланс' : 'Total balance'}
+          </p>
+          <p className="sidebar-stats-balance">{sym}{fmt(totalBalance)}</p>
+          <div className="sidebar-stats-row">
+            <div className="sidebar-stats-item">
+              <TrendingUp size={11} color="#10B981" />
+              <span style={{ color: '#10B981', fontWeight: 600 }}>{sym}{fmt(monthIncome)}</span>
+            </div>
+            <div className="sidebar-stats-item">
+              <TrendingDown size={11} color="#EF4444" />
+              <span style={{ color: '#EF4444', fontWeight: 600 }}>{sym}{fmt(monthExpense)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View mode toggle */}
+      <div className="sidebar-view-toggle">
+        <button
+          className={`sidebar-view-btn ${viewMode === 'pc' ? 'active' : ''}`}
+          onClick={() => setViewMode('pc')}
+        >
+          <Monitor size={11} />
+          {language === 'ru' ? 'ПК' : 'PC'}
+        </button>
+        <button
+          className={`sidebar-view-btn ${viewMode === 'phone' ? 'active' : ''}`}
+          onClick={() => setViewMode('phone')}
+        >
+          <Smartphone size={11} />
+          {language === 'ru' ? 'Телефон' : 'Phone'}
+        </button>
       </div>
 
       <nav className="sidebar-nav">

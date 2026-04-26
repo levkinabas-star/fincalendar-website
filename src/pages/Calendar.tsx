@@ -124,7 +124,7 @@ export default function Calendar() {
   const hasAnything = hasDayOps || selectedTx.length > 0 || (debtsWithDueDateMap[selectedDate]?.length ?? 0) > 0;
 
   return (
-    <div className="page-enter pb-32 md:pb-8">
+    <div className="page-enter pb-32 md:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between px-5 md:px-8 pt-6 pb-4 md:pt-8">
         <h1 className="text-2xl font-bold text-slate-100">{t.calendar}</h1>
@@ -138,8 +138,12 @@ export default function Calendar() {
         </button>
       </div>
 
+      {/* ── 2-col grid on desktop: calendar (left) / selected day events (right) ── */}
+      <div className="calendar-grid-wrap">
+      <div className="calendar-col-left">
+
       {/* Month Navigator */}
-      <div className="flex items-center justify-between px-5 md:px-8 mb-4">
+      <div className="flex items-center justify-between px-5 md:px-0 mb-4">
         <button onClick={prevMonth} className="w-9 h-9 rounded-xl flex items-center justify-center active-scale" style={{ background: '#1E1E38' }}>
           <ChevronLeft size={18} className="text-slate-300" />
         </button>
@@ -152,7 +156,7 @@ export default function Calendar() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="mx-5 md:mx-8 rounded-2xl overflow-hidden mb-5" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+      <div className="mx-5 md:mx-0 rounded-2xl overflow-hidden mb-5" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
         {/* Weekday headers */}
         <div className="grid grid-cols-7 border-b" style={{ borderColor: '#1E2A40' }}>
           {t.weekdays.map((wd, i) => (
@@ -228,7 +232,7 @@ export default function Calendar() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-5 md:px-8 mb-5 flex-wrap">
+      <div className="flex items-center gap-4 px-5 md:px-0 mb-5 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full" style={{ background: '#F59E0B' }} />
           <span className="text-xs text-slate-500">{t.pending}</span>
@@ -255,10 +259,31 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Selected Day Panel */}
-      <div className="mx-5 md:mx-8 space-y-4">
-        {/* Date title */}
-        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+      </div>{/* end calendar-col-left */}
+
+      {/* Selected Day Panel — right column on desktop */}
+      <div className="calendar-col-right">
+      {/* Desktop right panel header */}
+      <div className="hidden md:flex items-center justify-between mb-4 px-4 py-3 rounded-2xl" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+        <div>
+          <p className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">{selectedDate === format(new Date(), 'yyyy-MM-dd') ? (language === 'ru' ? 'Сегодня' : 'Today') : format(parseISO(selectedDate), language === 'ru' ? 'd MMMM yyyy' : 'MMMM d, yyyy')}</p>
+          <p className="text-sm font-semibold text-slate-200 mt-0.5">
+            {hasAnything
+              ? (language === 'ru' ? `${dayOps.length + selectedTx.length} событий` : `${dayOps.length + selectedTx.length} events`)
+              : (language === 'ru' ? 'Нет событий' : 'No events')}
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-8 h-8 rounded-xl flex items-center justify-center active-scale"
+          style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' }}
+        >
+          <Plus size={14} color="white" />
+        </button>
+      </div>
+      <div className="mx-5 md:mx-0 space-y-4">
+        {/* Date title — mobile only */}
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide md:hidden">
           {selectedDate === format(new Date(), 'yyyy-MM-dd') ? t.today : selectedDate}
         </h3>
 
@@ -679,6 +704,8 @@ export default function Calendar() {
           </div>
         )}
       </div>
+      </div>{/* end calendar-col-right */}
+      </div>{/* end calendar-grid-wrap */}
 
       {/* Add Modal */}
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title={t.addPlanned} fullHeight>

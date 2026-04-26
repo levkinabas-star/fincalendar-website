@@ -242,7 +242,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="page-enter pb-32 md:pb-10">
+    <div className="page-enter pb-32 md:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between px-5 md:px-8 pt-6 pb-4 md:pt-8">
         <div>
@@ -258,8 +258,11 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {/* ── 2-col grid on desktop: balance+transactions (left) / accounts+upcoming+budgets (right) ── */}
+      <div className="dashboard-grid-wrap md:px-8 md:pb-10">
+
       {/* Balance Hero */}
-      <div className="mx-5 mb-5 md:mx-8 p-5 md:p-6 rounded-3xl relative overflow-hidden"
+      <div className="mx-5 mb-5 md:mx-0 dgrid-balance p-5 md:p-6 rounded-3xl relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #1A2744 0%, #0E1929 100%)',
           border: '1px solid #1E3A5F',
@@ -321,19 +324,19 @@ export default function Dashboard() {
 
       {/* Accounts Quick View */}
       {accounts.length > 0 ? (
-        <div className="mb-5 md:mb-6">
-          <div className="flex items-center justify-between px-5 md:px-8 mb-3">
+        <div className="mb-5 md:mb-0 dgrid-accounts">
+          <div className="flex items-center justify-between px-5 md:px-0 mb-3">
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.accounts}</h2>
             <button onClick={() => navigate('/accounts')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
               {t.seeAll} <ChevronRight size={13} />
             </button>
           </div>
-          <div className="flex gap-3 px-5 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 md:px-8">
+          <div className="flex gap-3 px-5 overflow-x-auto pb-1 md:grid md:grid-cols-2 md:overflow-visible md:pb-0 md:px-0">
             {accounts.map((acc) => (
               <button
                 key={acc.id}
                 onClick={() => setSelectedAccountId(acc.id)}
-                className="flex-shrink-0 rounded-2xl p-4 min-w-[150px] text-left active-scale md:min-w-0 md:flex-shrink-0"
+                className="flex-shrink-0 rounded-2xl p-4 min-w-[150px] text-left active-scale card-hover md:min-w-0 md:flex-shrink-0"
                 style={{
                   background: `linear-gradient(135deg, ${acc.color}20 0%, ${acc.color}08 100%)`,
                   border: `1px solid ${acc.color}30`,
@@ -350,8 +353,8 @@ export default function Dashboard() {
           </div>
         </div>
       ) : (
-        <div className="mx-5 mb-5 md:mx-8 md:mb-6">
-          <div className="flex items-center justify-between px-5 md:px-8 mb-3">
+        <div className="mx-5 mb-5 md:mx-0 md:mb-0 dgrid-accounts">
+          <div className="flex items-center justify-between md:px-0 mb-3">
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.accounts}</h2>
             <button onClick={() => navigate('/accounts')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
               {t.seeAll} <ChevronRight size={13} />
@@ -380,7 +383,7 @@ export default function Dashboard() {
       )}
 
       {/* Upcoming Planned Payments */}
-      <div className="mx-5 mb-5 md:mx-8">
+      <div className="mx-5 mb-5 md:mx-0 md:mb-0 dgrid-upcoming">
         <button
           className="flex items-center justify-between w-full mb-3 active-scale"
           onClick={() => setShowAllPlanned(true)}
@@ -440,7 +443,7 @@ export default function Dashboard() {
 
       {/* Budget Alerts */}
       {budgetAlerts.length > 0 && (
-        <div className="mx-5 mb-5 md:mx-8">
+        <div className="mx-5 mb-5 md:mx-0 md:mb-0 dgrid-budgets">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
               {language === 'ru' ? 'Бюджет' : 'Budget'}
@@ -487,7 +490,7 @@ export default function Dashboard() {
       )}
 
       {/* Recent Transactions — transactions + debt payments, grouped by date */}
-      <div className="mx-5 md:mx-8">
+      <div className="mx-5 md:mx-0 dgrid-transactions">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-3">{t.recentTransactions}</h2>
         {unifiedSorted.length === 0 ? (
           <div className="text-center py-10 text-slate-500">
@@ -725,6 +728,8 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      </div>{/* end dashboard-grid-wrap */}
 
       {/* All Planned Payments Modal */}
       <Modal
