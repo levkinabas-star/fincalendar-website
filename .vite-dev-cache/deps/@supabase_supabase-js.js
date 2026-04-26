@@ -5613,24 +5613,17 @@ var convertCell = (type, value) => {
       return toJson(value);
     case PostgresTypes.timestamp:
       return toTimestampString(value);
-    // Format to be consistent with PostgREST
     case PostgresTypes.abstime:
-    // To allow users to cast it based on Timezone
     case PostgresTypes.date:
-    // To allow users to cast it based on Timezone
     case PostgresTypes.daterange:
     case PostgresTypes.int4range:
     case PostgresTypes.int8range:
     case PostgresTypes.money:
     case PostgresTypes.reltime:
-    // To allow users to cast it based on Timezone
     case PostgresTypes.text:
     case PostgresTypes.time:
-    // To allow users to cast it based on Timezone
     case PostgresTypes.timestamptz:
-    // To allow users to cast it based on Timezone
     case PostgresTypes.timetz:
-    // To allow users to cast it based on Timezone
     case PostgresTypes.tsrange:
     case PostgresTypes.tstzrange:
       return noop(value);
@@ -9024,9 +9017,9 @@ Option 2: Install and provide the "ws" package:
     result.params = options === null || options === void 0 ? void 0 : options.params;
     result.logger = options === null || options === void 0 ? void 0 : options.logger;
     result.heartbeatCallback = this._wrapHeartbeatCallback(options === null || options === void 0 ? void 0 : options.heartbeatCallback);
-    result.reconnectAfterMs = (_f = options === null || options === void 0 ? void 0 : options.reconnectAfterMs) !== null && _f !== void 0 ? _f : ((tries) => {
+    result.reconnectAfterMs = (_f = options === null || options === void 0 ? void 0 : options.reconnectAfterMs) !== null && _f !== void 0 ? _f : (tries) => {
       return RECONNECT_INTERVALS[tries - 1] || DEFAULT_RECONNECT_FALLBACK;
-    });
+    };
     let defaultEncode;
     let defaultDecode;
     const vsn = (_g = options === null || options === void 0 ? void 0 : options.vsn) !== null && _g !== void 0 ? _g : DEFAULT_VSN;
@@ -9075,13 +9068,14 @@ Option 2: Install and provide the "ws" package:
 // node_modules/iceberg-js/dist/index.mjs
 var IcebergError = class extends Error {
   constructor(message, opts) {
+    var _a;
     super(message);
     this.name = "IcebergError";
     this.status = opts.status;
     this.icebergType = opts.icebergType;
     this.icebergCode = opts.icebergCode;
     this.details = opts.details;
-    this.isCommitStateUnknown = opts.icebergType === "CommitStateUnknownException" || [500, 502, 504].includes(opts.status) && opts.icebergType?.includes("CommitState") === true;
+    this.isCommitStateUnknown = opts.icebergType === "CommitStateUnknownException" || [500, 502, 504].includes(opts.status) && ((_a = opts.icebergType) == null ? void 0 : _a.includes("CommitState")) === true;
   }
   /**
    * Returns true if the error is a 404 Not Found error.
@@ -9154,13 +9148,13 @@ function createFetchClient(options) {
       const data = isJson && text ? JSON.parse(text) : text;
       if (!res.ok) {
         const errBody = isJson ? data : void 0;
-        const errorDetail = errBody?.error;
+        const errorDetail = errBody == null ? void 0 : errBody.error;
         throw new IcebergError(
-          errorDetail?.message ?? `Request failed with status ${res.status}`,
+          (errorDetail == null ? void 0 : errorDetail.message) ?? `Request failed with status ${res.status}`,
           {
             status: res.status,
-            icebergType: errorDetail?.type,
-            icebergCode: errorDetail?.code,
+            icebergType: errorDetail == null ? void 0 : errorDetail.type,
+            icebergCode: errorDetail == null ? void 0 : errorDetail.code,
             details: errBody
           }
         );
@@ -9189,7 +9183,7 @@ var NamespaceOperations = class {
   async createNamespace(id, metadata) {
     const request = {
       namespace: id.namespace,
-      properties: metadata?.properties
+      properties: metadata == null ? void 0 : metadata.properties
     };
     const response = await this.client.request({
       method: "POST",
@@ -9282,7 +9276,7 @@ var TableOperations = class {
     await this.client.request({
       method: "DELETE",
       path: `${this.prefix}/namespaces/${namespaceToPath2(id.namespace)}/tables/${id.name}`,
-      query: { purgeRequested: String(options?.purge ?? false) }
+      query: { purgeRequested: String((options == null ? void 0 : options.purge) ?? false) }
     });
   }
   async loadTable(id) {
@@ -9334,6 +9328,7 @@ var IcebergRestCatalog = class {
    * @param options - Configuration options for the catalog client
    */
   constructor(options) {
+    var _a;
     let prefix = "v1";
     if (options.catalogName) {
       prefix += `/${options.catalogName}`;
@@ -9344,7 +9339,7 @@ var IcebergRestCatalog = class {
       auth: options.auth,
       fetchImpl: options.fetch
     });
-    this.accessDelegation = options.accessDelegation?.join(",");
+    this.accessDelegation = (_a = options.accessDelegation) == null ? void 0 : _a.join(",");
     this.namespaceOps = new NamespaceOperations(this.client, prefix);
     this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation);
   }
@@ -9696,7 +9691,7 @@ var StorageUnknownError = class extends StorageError {
     this.originalError = originalError;
   }
 };
-var StorageVectorsErrorCode = (function(StorageVectorsErrorCode$1) {
+var StorageVectorsErrorCode = function(StorageVectorsErrorCode$1) {
   StorageVectorsErrorCode$1["InternalError"] = "InternalError";
   StorageVectorsErrorCode$1["S3VectorConflictException"] = "S3VectorConflictException";
   StorageVectorsErrorCode$1["S3VectorNotFoundException"] = "S3VectorNotFoundException";
@@ -9704,7 +9699,7 @@ var StorageVectorsErrorCode = (function(StorageVectorsErrorCode$1) {
   StorageVectorsErrorCode$1["S3VectorMaxBucketsExceeded"] = "S3VectorMaxBucketsExceeded";
   StorageVectorsErrorCode$1["S3VectorMaxIndexesExceeded"] = "S3VectorMaxIndexesExceeded";
   return StorageVectorsErrorCode$1;
-})({});
+}({});
 function setHeader(headers, name, value) {
   const result = _objectSpread22({}, headers);
   const nameLower = name.toLowerCase();
@@ -12515,7 +12510,7 @@ function expiresAt(expiresIn) {
   return timeNow + expiresIn;
 }
 function generateCallbackId() {
-  return /* @__PURE__ */ Symbol("auth-callback");
+  return Symbol("auth-callback");
 }
 var isBrowser = () => typeof window !== "undefined" && typeof document !== "undefined";
 var localStorageWriteTests = {

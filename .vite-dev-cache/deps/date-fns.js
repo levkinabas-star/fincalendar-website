@@ -1361,19 +1361,16 @@ var formatters2 = {
   G: function G(date, token, localize2) {
     var era = date.getUTCFullYear() > 0 ? 1 : 0;
     switch (token) {
-      // AD, BC
       case "G":
       case "GG":
       case "GGG":
         return localize2.era(era, {
           width: "abbreviated"
         });
-      // A, B
       case "GGGGG":
         return localize2.era(era, {
           width: "narrow"
         });
-      // Anno Domini, Before Christ
       case "GGGG":
       default:
         return localize2.era(era, {
@@ -1429,30 +1426,24 @@ var formatters2 = {
   Q: function Q(date, token, localize2) {
     var quarter = Math.ceil((date.getUTCMonth() + 1) / 3);
     switch (token) {
-      // 1, 2, 3, 4
       case "Q":
         return String(quarter);
-      // 01, 02, 03, 04
       case "QQ":
         return addLeadingZeros(quarter, 2);
-      // 1st, 2nd, 3rd, 4th
       case "Qo":
         return localize2.ordinalNumber(quarter, {
           unit: "quarter"
         });
-      // Q1, Q2, Q3, Q4
       case "QQQ":
         return localize2.quarter(quarter, {
           width: "abbreviated",
           context: "formatting"
         });
-      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
       case "QQQQQ":
         return localize2.quarter(quarter, {
           width: "narrow",
           context: "formatting"
         });
-      // 1st quarter, 2nd quarter, ...
       case "QQQQ":
       default:
         return localize2.quarter(quarter, {
@@ -1465,30 +1456,24 @@ var formatters2 = {
   q: function q(date, token, localize2) {
     var quarter = Math.ceil((date.getUTCMonth() + 1) / 3);
     switch (token) {
-      // 1, 2, 3, 4
       case "q":
         return String(quarter);
-      // 01, 02, 03, 04
       case "qq":
         return addLeadingZeros(quarter, 2);
-      // 1st, 2nd, 3rd, 4th
       case "qo":
         return localize2.ordinalNumber(quarter, {
           unit: "quarter"
         });
-      // Q1, Q2, Q3, Q4
       case "qqq":
         return localize2.quarter(quarter, {
           width: "abbreviated",
           context: "standalone"
         });
-      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
       case "qqqqq":
         return localize2.quarter(quarter, {
           width: "narrow",
           context: "standalone"
         });
-      // 1st quarter, 2nd quarter, ...
       case "qqqq":
       default:
         return localize2.quarter(quarter, {
@@ -1504,24 +1489,20 @@ var formatters2 = {
       case "M":
       case "MM":
         return lightFormatters_default.M(date, token);
-      // 1st, 2nd, ..., 12th
       case "Mo":
         return localize2.ordinalNumber(month + 1, {
           unit: "month"
         });
-      // Jan, Feb, ..., Dec
       case "MMM":
         return localize2.month(month, {
           width: "abbreviated",
           context: "formatting"
         });
-      // J, F, ..., D
       case "MMMMM":
         return localize2.month(month, {
           width: "narrow",
           context: "formatting"
         });
-      // January, February, ..., December
       case "MMMM":
       default:
         return localize2.month(month, {
@@ -1534,30 +1515,24 @@ var formatters2 = {
   L: function L(date, token, localize2) {
     var month = date.getUTCMonth();
     switch (token) {
-      // 1, 2, ..., 12
       case "L":
         return String(month + 1);
-      // 01, 02, ..., 12
       case "LL":
         return addLeadingZeros(month + 1, 2);
-      // 1st, 2nd, ..., 12th
       case "Lo":
         return localize2.ordinalNumber(month + 1, {
           unit: "month"
         });
-      // Jan, Feb, ..., Dec
       case "LLL":
         return localize2.month(month, {
           width: "abbreviated",
           context: "standalone"
         });
-      // J, F, ..., D
       case "LLLLL":
         return localize2.month(month, {
           width: "narrow",
           context: "standalone"
         });
-      // January, February, ..., December
       case "LLLL":
       default:
         return localize2.month(month, {
@@ -1609,7 +1584,6 @@ var formatters2 = {
   E: function E(date, token, localize2) {
     var dayOfWeek = date.getUTCDay();
     switch (token) {
-      // Tue
       case "E":
       case "EE":
       case "EEE":
@@ -1617,19 +1591,16 @@ var formatters2 = {
           width: "abbreviated",
           context: "formatting"
         });
-      // T
       case "EEEEE":
         return localize2.day(dayOfWeek, {
           width: "narrow",
           context: "formatting"
         });
-      // Tu
       case "EEEEEE":
         return localize2.day(dayOfWeek, {
           width: "short",
           context: "formatting"
         });
-      // Tuesday
       case "EEEE":
       default:
         return localize2.day(dayOfWeek, {
@@ -1643,13 +1614,10 @@ var formatters2 = {
     var dayOfWeek = date.getUTCDay();
     var localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
     switch (token) {
-      // Numerical value (Nth day of week with current locale or weekStartsOn)
       case "e":
         return String(localDayOfWeek);
-      // Padded numerical value
       case "ee":
         return addLeadingZeros(localDayOfWeek, 2);
-      // 1st, 2nd, ..., 7th
       case "eo":
         return localize2.ordinalNumber(localDayOfWeek, {
           unit: "day"
@@ -1659,19 +1627,16 @@ var formatters2 = {
           width: "abbreviated",
           context: "formatting"
         });
-      // T
       case "eeeee":
         return localize2.day(dayOfWeek, {
           width: "narrow",
           context: "formatting"
         });
-      // Tu
       case "eeeeee":
         return localize2.day(dayOfWeek, {
           width: "short",
           context: "formatting"
         });
-      // Tuesday
       case "eeee":
       default:
         return localize2.day(dayOfWeek, {
@@ -1685,13 +1650,10 @@ var formatters2 = {
     var dayOfWeek = date.getUTCDay();
     var localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
     switch (token) {
-      // Numerical value (same as in `e`)
       case "c":
         return String(localDayOfWeek);
-      // Padded numerical value
       case "cc":
         return addLeadingZeros(localDayOfWeek, token.length);
-      // 1st, 2nd, ..., 7th
       case "co":
         return localize2.ordinalNumber(localDayOfWeek, {
           unit: "day"
@@ -1701,19 +1663,16 @@ var formatters2 = {
           width: "abbreviated",
           context: "standalone"
         });
-      // T
       case "ccccc":
         return localize2.day(dayOfWeek, {
           width: "narrow",
           context: "standalone"
         });
-      // Tu
       case "cccccc":
         return localize2.day(dayOfWeek, {
           width: "short",
           context: "standalone"
         });
-      // Tuesday
       case "cccc":
       default:
         return localize2.day(dayOfWeek, {
@@ -1727,36 +1686,29 @@ var formatters2 = {
     var dayOfWeek = date.getUTCDay();
     var isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
     switch (token) {
-      // 2
       case "i":
         return String(isoDayOfWeek);
-      // 02
       case "ii":
         return addLeadingZeros(isoDayOfWeek, token.length);
-      // 2nd
       case "io":
         return localize2.ordinalNumber(isoDayOfWeek, {
           unit: "day"
         });
-      // Tue
       case "iii":
         return localize2.day(dayOfWeek, {
           width: "abbreviated",
           context: "formatting"
         });
-      // T
       case "iiiii":
         return localize2.day(dayOfWeek, {
           width: "narrow",
           context: "formatting"
         });
-      // Tu
       case "iiiiii":
         return localize2.day(dayOfWeek, {
           width: "short",
           context: "formatting"
         });
-      // Tuesday
       case "iiii":
       default:
         return localize2.day(dayOfWeek, {
@@ -1935,21 +1887,13 @@ var formatters2 = {
       return "Z";
     }
     switch (token) {
-      // Hours and optional minutes
       case "X":
         return formatTimezoneWithOptionalMinutes(timezoneOffset);
-      // Hours, minutes and optional seconds without `:` delimiter
-      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
-      // so this token always has the same output as `XX`
       case "XXXX":
       case "XX":
         return formatTimezone(timezoneOffset);
-      // Hours, minutes and optional seconds with `:` delimiter
-      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
-      // so this token always has the same output as `XXX`
       case "XXXXX":
       case "XXX":
-      // Hours and minutes with `:` delimiter
       default:
         return formatTimezone(timezoneOffset, ":");
     }
@@ -1959,21 +1903,13 @@ var formatters2 = {
     var originalDate = options._originalDate || date;
     var timezoneOffset = originalDate.getTimezoneOffset();
     switch (token) {
-      // Hours and optional minutes
       case "x":
         return formatTimezoneWithOptionalMinutes(timezoneOffset);
-      // Hours, minutes and optional seconds without `:` delimiter
-      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
-      // so this token always has the same output as `xx`
       case "xxxx":
       case "xx":
         return formatTimezone(timezoneOffset);
-      // Hours, minutes and optional seconds with `:` delimiter
-      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
-      // so this token always has the same output as `xxx`
       case "xxxxx":
       case "xxx":
-      // Hours and minutes with `:` delimiter
       default:
         return formatTimezone(timezoneOffset, ":");
     }
@@ -1983,12 +1919,10 @@ var formatters2 = {
     var originalDate = options._originalDate || date;
     var timezoneOffset = originalDate.getTimezoneOffset();
     switch (token) {
-      // Short
       case "O":
       case "OO":
       case "OOO":
         return "GMT" + formatTimezoneShort(timezoneOffset, ":");
-      // Long
       case "OOOO":
       default:
         return "GMT" + formatTimezone(timezoneOffset, ":");
@@ -1999,12 +1933,10 @@ var formatters2 = {
     var originalDate = options._originalDate || date;
     var timezoneOffset = originalDate.getTimezoneOffset();
     switch (token) {
-      // Short
       case "z":
       case "zz":
       case "zzz":
         return "GMT" + formatTimezoneShort(timezoneOffset, ":");
-      // Long
       case "zzzz":
       default:
         return "GMT" + formatTimezone(timezoneOffset, ":");
@@ -3765,7 +3697,7 @@ function _defineProperty(e2, r, t2) {
 
 // node_modules/date-fns/esm/parse/_lib/Setter.js
 var TIMEZONE_UNIT_PRIORITY = 10;
-var Setter = (function() {
+var Setter = function() {
   function Setter2() {
     _classCallCheck(this, Setter2);
     _defineProperty(this, "priority", void 0);
@@ -3778,8 +3710,8 @@ var Setter = (function() {
     }
   }]);
   return Setter2;
-})();
-var ValueSetter = (function(_Setter) {
+}();
+var ValueSetter = function(_Setter) {
   _inherits(ValueSetter2, _Setter);
   var _super = _createSuper(ValueSetter2);
   function ValueSetter2(value, validateValue, setValue, priority, subPriority) {
@@ -3807,8 +3739,8 @@ var ValueSetter = (function(_Setter) {
     }
   }]);
   return ValueSetter2;
-})(Setter);
-var DateToSystemTimezoneSetter = (function(_Setter2) {
+}(Setter);
+var DateToSystemTimezoneSetter = function(_Setter2) {
   _inherits(DateToSystemTimezoneSetter2, _Setter2);
   var _super2 = _createSuper(DateToSystemTimezoneSetter2);
   function DateToSystemTimezoneSetter2() {
@@ -3835,10 +3767,10 @@ var DateToSystemTimezoneSetter = (function(_Setter2) {
     }
   }]);
   return DateToSystemTimezoneSetter2;
-})(Setter);
+}(Setter);
 
 // node_modules/date-fns/esm/parse/_lib/Parser.js
-var Parser = (function() {
+var Parser = function() {
   function Parser2() {
     _classCallCheck(this, Parser2);
     _defineProperty(this, "incompatibleTokens", void 0);
@@ -3864,10 +3796,10 @@ var Parser = (function() {
     }
   }]);
   return Parser2;
-})();
+}();
 
 // node_modules/date-fns/esm/parse/_lib/parsers/EraParser.js
-var EraParser = (function(_Parser) {
+var EraParser = function(_Parser) {
   _inherits(EraParser2, _Parser);
   var _super = _createSuper(EraParser2);
   function EraParser2() {
@@ -3885,7 +3817,6 @@ var EraParser = (function(_Parser) {
     key: "parse",
     value: function parse2(dateString, token, match2) {
       switch (token) {
-        // AD, BC
         case "G":
         case "GG":
         case "GGG":
@@ -3894,12 +3825,10 @@ var EraParser = (function(_Parser) {
           }) || match2.era(dateString, {
             width: "narrow"
           });
-        // A, B
         case "GGGGG":
           return match2.era(dateString, {
             width: "narrow"
           });
-        // Anno Domini, Before Christ
         case "GGGG":
         default:
           return match2.era(dateString, {
@@ -3921,7 +3850,7 @@ var EraParser = (function(_Parser) {
     }
   }]);
   return EraParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/constants.js
 var numericPatterns = {
@@ -4078,7 +4007,7 @@ function isLeapYearIndex(year) {
 }
 
 // node_modules/date-fns/esm/parse/_lib/parsers/YearParser.js
-var YearParser = (function(_Parser) {
+var YearParser = function(_Parser) {
   _inherits(YearParser2, _Parser);
   var _super = _createSuper(YearParser2);
   function YearParser2() {
@@ -4134,10 +4063,10 @@ var YearParser = (function(_Parser) {
     }
   }]);
   return YearParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/LocalWeekYearParser.js
-var LocalWeekYearParser = (function(_Parser) {
+var LocalWeekYearParser = function(_Parser) {
   _inherits(LocalWeekYearParser2, _Parser);
   var _super = _createSuper(LocalWeekYearParser2);
   function LocalWeekYearParser2() {
@@ -4193,10 +4122,10 @@ var LocalWeekYearParser = (function(_Parser) {
     }
   }]);
   return LocalWeekYearParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/ISOWeekYearParser.js
-var ISOWeekYearParser = (function(_Parser) {
+var ISOWeekYearParser = function(_Parser) {
   _inherits(ISOWeekYearParser2, _Parser);
   var _super = _createSuper(ISOWeekYearParser2);
   function ISOWeekYearParser2() {
@@ -4228,10 +4157,10 @@ var ISOWeekYearParser = (function(_Parser) {
     }
   }]);
   return ISOWeekYearParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/ExtendedYearParser.js
-var ExtendedYearParser = (function(_Parser) {
+var ExtendedYearParser = function(_Parser) {
   _inherits(ExtendedYearParser2, _Parser);
   var _super = _createSuper(ExtendedYearParser2);
   function ExtendedYearParser2() {
@@ -4262,10 +4191,10 @@ var ExtendedYearParser = (function(_Parser) {
     }
   }]);
   return ExtendedYearParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/QuarterParser.js
-var QuarterParser = (function(_Parser) {
+var QuarterParser = function(_Parser) {
   _inherits(QuarterParser2, _Parser);
   var _super = _createSuper(QuarterParser2);
   function QuarterParser2() {
@@ -4283,16 +4212,13 @@ var QuarterParser = (function(_Parser) {
     key: "parse",
     value: function parse2(dateString, token, match2) {
       switch (token) {
-        // 1, 2, 3, 4
         case "Q":
         case "QQ":
           return parseNDigits(token.length, dateString);
-        // 1st, 2nd, 3rd, 4th
         case "Qo":
           return match2.ordinalNumber(dateString, {
             unit: "quarter"
           });
-        // Q1, Q2, Q3, Q4
         case "QQQ":
           return match2.quarter(dateString, {
             width: "abbreviated",
@@ -4301,13 +4227,11 @@ var QuarterParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           });
-        // 1, 2, 3, 4 (narrow quarter; could be not numerical)
         case "QQQQQ":
           return match2.quarter(dateString, {
             width: "narrow",
             context: "formatting"
           });
-        // 1st quarter, 2nd quarter, ...
         case "QQQQ":
         default:
           return match2.quarter(dateString, {
@@ -4336,10 +4260,10 @@ var QuarterParser = (function(_Parser) {
     }
   }]);
   return QuarterParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/StandAloneQuarterParser.js
-var StandAloneQuarterParser = (function(_Parser) {
+var StandAloneQuarterParser = function(_Parser) {
   _inherits(StandAloneQuarterParser2, _Parser);
   var _super = _createSuper(StandAloneQuarterParser2);
   function StandAloneQuarterParser2() {
@@ -4357,16 +4281,13 @@ var StandAloneQuarterParser = (function(_Parser) {
     key: "parse",
     value: function parse2(dateString, token, match2) {
       switch (token) {
-        // 1, 2, 3, 4
         case "q":
         case "qq":
           return parseNDigits(token.length, dateString);
-        // 1st, 2nd, 3rd, 4th
         case "qo":
           return match2.ordinalNumber(dateString, {
             unit: "quarter"
           });
-        // Q1, Q2, Q3, Q4
         case "qqq":
           return match2.quarter(dateString, {
             width: "abbreviated",
@@ -4375,13 +4296,11 @@ var StandAloneQuarterParser = (function(_Parser) {
             width: "narrow",
             context: "standalone"
           });
-        // 1, 2, 3, 4 (narrow quarter; could be not numerical)
         case "qqqqq":
           return match2.quarter(dateString, {
             width: "narrow",
             context: "standalone"
           });
-        // 1st quarter, 2nd quarter, ...
         case "qqqq":
         default:
           return match2.quarter(dateString, {
@@ -4410,10 +4329,10 @@ var StandAloneQuarterParser = (function(_Parser) {
     }
   }]);
   return StandAloneQuarterParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/MonthParser.js
-var MonthParser = (function(_Parser) {
+var MonthParser = function(_Parser) {
   _inherits(MonthParser2, _Parser);
   var _super = _createSuper(MonthParser2);
   function MonthParser2() {
@@ -4434,18 +4353,14 @@ var MonthParser = (function(_Parser) {
         return value - 1;
       };
       switch (token) {
-        // 1, 2, ..., 12
         case "M":
           return mapValue(parseNumericPattern(numericPatterns.month, dateString), valueCallback3);
-        // 01, 02, ..., 12
         case "MM":
           return mapValue(parseNDigits(2, dateString), valueCallback3);
-        // 1st, 2nd, ..., 12th
         case "Mo":
           return mapValue(match2.ordinalNumber(dateString, {
             unit: "month"
           }), valueCallback3);
-        // Jan, Feb, ..., Dec
         case "MMM":
           return match2.month(dateString, {
             width: "abbreviated",
@@ -4454,13 +4369,11 @@ var MonthParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           });
-        // J, F, ..., D
         case "MMMMM":
           return match2.month(dateString, {
             width: "narrow",
             context: "formatting"
           });
-        // January, February, ..., December
         case "MMMM":
         default:
           return match2.month(dateString, {
@@ -4489,10 +4402,10 @@ var MonthParser = (function(_Parser) {
     }
   }]);
   return MonthParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/StandAloneMonthParser.js
-var StandAloneMonthParser = (function(_Parser) {
+var StandAloneMonthParser = function(_Parser) {
   _inherits(StandAloneMonthParser2, _Parser);
   var _super = _createSuper(StandAloneMonthParser2);
   function StandAloneMonthParser2() {
@@ -4513,18 +4426,14 @@ var StandAloneMonthParser = (function(_Parser) {
         return value - 1;
       };
       switch (token) {
-        // 1, 2, ..., 12
         case "L":
           return mapValue(parseNumericPattern(numericPatterns.month, dateString), valueCallback3);
-        // 01, 02, ..., 12
         case "LL":
           return mapValue(parseNDigits(2, dateString), valueCallback3);
-        // 1st, 2nd, ..., 12th
         case "Lo":
           return mapValue(match2.ordinalNumber(dateString, {
             unit: "month"
           }), valueCallback3);
-        // Jan, Feb, ..., Dec
         case "LLL":
           return match2.month(dateString, {
             width: "abbreviated",
@@ -4533,13 +4442,11 @@ var StandAloneMonthParser = (function(_Parser) {
             width: "narrow",
             context: "standalone"
           });
-        // J, F, ..., D
         case "LLLLL":
           return match2.month(dateString, {
             width: "narrow",
             context: "standalone"
           });
-        // January, February, ..., December
         case "LLLL":
         default:
           return match2.month(dateString, {
@@ -4568,7 +4475,7 @@ var StandAloneMonthParser = (function(_Parser) {
     }
   }]);
   return StandAloneMonthParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/_lib/setUTCWeek/index.js
 function setUTCWeek(dirtyDate, dirtyWeek, options) {
@@ -4581,7 +4488,7 @@ function setUTCWeek(dirtyDate, dirtyWeek, options) {
 }
 
 // node_modules/date-fns/esm/parse/_lib/parsers/LocalWeekParser.js
-var LocalWeekParser = (function(_Parser) {
+var LocalWeekParser = function(_Parser) {
   _inherits(LocalWeekParser2, _Parser);
   var _super = _createSuper(LocalWeekParser2);
   function LocalWeekParser2() {
@@ -4621,7 +4528,7 @@ var LocalWeekParser = (function(_Parser) {
     }
   }]);
   return LocalWeekParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/_lib/setUTCISOWeek/index.js
 function setUTCISOWeek(dirtyDate, dirtyISOWeek) {
@@ -4634,7 +4541,7 @@ function setUTCISOWeek(dirtyDate, dirtyISOWeek) {
 }
 
 // node_modules/date-fns/esm/parse/_lib/parsers/ISOWeekParser.js
-var ISOWeekParser = (function(_Parser) {
+var ISOWeekParser = function(_Parser) {
   _inherits(ISOWeekParser2, _Parser);
   var _super = _createSuper(ISOWeekParser2);
   function ISOWeekParser2() {
@@ -4674,12 +4581,12 @@ var ISOWeekParser = (function(_Parser) {
     }
   }]);
   return ISOWeekParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/DateParser.js
 var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 var DAYS_IN_MONTH_LEAP_YEAR = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-var DateParser = (function(_Parser) {
+var DateParser = function(_Parser) {
   _inherits(DateParser2, _Parser);
   var _super = _createSuper(DateParser2);
   function DateParser2() {
@@ -4729,10 +4636,10 @@ var DateParser = (function(_Parser) {
     }
   }]);
   return DateParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/DayOfYearParser.js
-var DayOfYearParser = (function(_Parser) {
+var DayOfYearParser = function(_Parser) {
   _inherits(DayOfYearParser2, _Parser);
   var _super = _createSuper(DayOfYearParser2);
   function DayOfYearParser2() {
@@ -4782,7 +4689,7 @@ var DayOfYearParser = (function(_Parser) {
     }
   }]);
   return DayOfYearParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/_lib/setUTCDay/index.js
 function setUTCDay(dirtyDate, dirtyDay, options) {
@@ -4804,7 +4711,7 @@ function setUTCDay(dirtyDate, dirtyDay, options) {
 }
 
 // node_modules/date-fns/esm/parse/_lib/parsers/DayParser.js
-var DayParser = (function(_Parser) {
+var DayParser = function(_Parser) {
   _inherits(DayParser2, _Parser);
   var _super = _createSuper(DayParser2);
   function DayParser2() {
@@ -4822,7 +4729,6 @@ var DayParser = (function(_Parser) {
     key: "parse",
     value: function parse2(dateString, token, match2) {
       switch (token) {
-        // Tue
         case "E":
         case "EE":
         case "EEE":
@@ -4836,13 +4742,11 @@ var DayParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           });
-        // T
         case "EEEEE":
           return match2.day(dateString, {
             width: "narrow",
             context: "formatting"
           });
-        // Tu
         case "EEEEEE":
           return match2.day(dateString, {
             width: "short",
@@ -4851,7 +4755,6 @@ var DayParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           });
-        // Tuesday
         case "EEEE":
         default:
           return match2.day(dateString, {
@@ -4883,10 +4786,10 @@ var DayParser = (function(_Parser) {
     }
   }]);
   return DayParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/LocalDayParser.js
-var LocalDayParser = (function(_Parser) {
+var LocalDayParser = function(_Parser) {
   _inherits(LocalDayParser2, _Parser);
   var _super = _createSuper(LocalDayParser2);
   function LocalDayParser2() {
@@ -4908,16 +4811,13 @@ var LocalDayParser = (function(_Parser) {
         return (value + options.weekStartsOn + 6) % 7 + wholeWeekDays;
       };
       switch (token) {
-        // 3
         case "e":
         case "ee":
           return mapValue(parseNDigits(token.length, dateString), valueCallback3);
-        // 3rd
         case "eo":
           return mapValue(match2.ordinalNumber(dateString, {
             unit: "day"
           }), valueCallback3);
-        // Tue
         case "eee":
           return match2.day(dateString, {
             width: "abbreviated",
@@ -4929,13 +4829,11 @@ var LocalDayParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           });
-        // T
         case "eeeee":
           return match2.day(dateString, {
             width: "narrow",
             context: "formatting"
           });
-        // Tu
         case "eeeeee":
           return match2.day(dateString, {
             width: "short",
@@ -4944,7 +4842,6 @@ var LocalDayParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           });
-        // Tuesday
         case "eeee":
         default:
           return match2.day(dateString, {
@@ -4976,10 +4873,10 @@ var LocalDayParser = (function(_Parser) {
     }
   }]);
   return LocalDayParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/StandAloneLocalDayParser.js
-var StandAloneLocalDayParser = (function(_Parser) {
+var StandAloneLocalDayParser = function(_Parser) {
   _inherits(StandAloneLocalDayParser2, _Parser);
   var _super = _createSuper(StandAloneLocalDayParser2);
   function StandAloneLocalDayParser2() {
@@ -5001,16 +4898,13 @@ var StandAloneLocalDayParser = (function(_Parser) {
         return (value + options.weekStartsOn + 6) % 7 + wholeWeekDays;
       };
       switch (token) {
-        // 3
         case "c":
         case "cc":
           return mapValue(parseNDigits(token.length, dateString), valueCallback3);
-        // 3rd
         case "co":
           return mapValue(match2.ordinalNumber(dateString, {
             unit: "day"
           }), valueCallback3);
-        // Tue
         case "ccc":
           return match2.day(dateString, {
             width: "abbreviated",
@@ -5022,13 +4916,11 @@ var StandAloneLocalDayParser = (function(_Parser) {
             width: "narrow",
             context: "standalone"
           });
-        // T
         case "ccccc":
           return match2.day(dateString, {
             width: "narrow",
             context: "standalone"
           });
-        // Tu
         case "cccccc":
           return match2.day(dateString, {
             width: "short",
@@ -5037,7 +4929,6 @@ var StandAloneLocalDayParser = (function(_Parser) {
             width: "narrow",
             context: "standalone"
           });
-        // Tuesday
         case "cccc":
         default:
           return match2.day(dateString, {
@@ -5069,7 +4960,7 @@ var StandAloneLocalDayParser = (function(_Parser) {
     }
   }]);
   return StandAloneLocalDayParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/_lib/setUTCISODay/index.js
 function setUTCISODay(dirtyDate, dirtyDay) {
@@ -5089,7 +4980,7 @@ function setUTCISODay(dirtyDate, dirtyDay) {
 }
 
 // node_modules/date-fns/esm/parse/_lib/parsers/ISODayParser.js
-var ISODayParser = (function(_Parser) {
+var ISODayParser = function(_Parser) {
   _inherits(ISODayParser2, _Parser);
   var _super = _createSuper(ISODayParser2);
   function ISODayParser2() {
@@ -5113,16 +5004,13 @@ var ISODayParser = (function(_Parser) {
         return value;
       };
       switch (token) {
-        // 2
         case "i":
         case "ii":
           return parseNDigits(token.length, dateString);
-        // 2nd
         case "io":
           return match2.ordinalNumber(dateString, {
             unit: "day"
           });
-        // Tue
         case "iii":
           return mapValue(match2.day(dateString, {
             width: "abbreviated",
@@ -5134,13 +5022,11 @@ var ISODayParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           }), valueCallback3);
-        // T
         case "iiiii":
           return mapValue(match2.day(dateString, {
             width: "narrow",
             context: "formatting"
           }), valueCallback3);
-        // Tu
         case "iiiiii":
           return mapValue(match2.day(dateString, {
             width: "short",
@@ -5149,7 +5035,6 @@ var ISODayParser = (function(_Parser) {
             width: "narrow",
             context: "formatting"
           }), valueCallback3);
-        // Tuesday
         case "iiii":
         default:
           return mapValue(match2.day(dateString, {
@@ -5181,10 +5066,10 @@ var ISODayParser = (function(_Parser) {
     }
   }]);
   return ISODayParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/AMPMParser.js
-var AMPMParser = (function(_Parser) {
+var AMPMParser = function(_Parser) {
   _inherits(AMPMParser2, _Parser);
   var _super = _createSuper(AMPMParser2);
   function AMPMParser2() {
@@ -5239,10 +5124,10 @@ var AMPMParser = (function(_Parser) {
     }
   }]);
   return AMPMParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/AMPMMidnightParser.js
-var AMPMMidnightParser = (function(_Parser) {
+var AMPMMidnightParser = function(_Parser) {
   _inherits(AMPMMidnightParser2, _Parser);
   var _super = _createSuper(AMPMMidnightParser2);
   function AMPMMidnightParser2() {
@@ -5297,10 +5182,10 @@ var AMPMMidnightParser = (function(_Parser) {
     }
   }]);
   return AMPMMidnightParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/DayPeriodParser.js
-var DayPeriodParser = (function(_Parser) {
+var DayPeriodParser = function(_Parser) {
   _inherits(DayPeriodParser2, _Parser);
   var _super = _createSuper(DayPeriodParser2);
   function DayPeriodParser2() {
@@ -5355,10 +5240,10 @@ var DayPeriodParser = (function(_Parser) {
     }
   }]);
   return DayPeriodParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/Hour1to12Parser.js
-var Hour1to12Parser = (function(_Parser) {
+var Hour1to12Parser = function(_Parser) {
   _inherits(Hour1to12Parser2, _Parser);
   var _super = _createSuper(Hour1to12Parser2);
   function Hour1to12Parser2() {
@@ -5406,10 +5291,10 @@ var Hour1to12Parser = (function(_Parser) {
     }
   }]);
   return Hour1to12Parser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/Hour0to23Parser.js
-var Hour0to23Parser = (function(_Parser) {
+var Hour0to23Parser = function(_Parser) {
   _inherits(Hour0to23Parser2, _Parser);
   var _super = _createSuper(Hour0to23Parser2);
   function Hour0to23Parser2() {
@@ -5450,10 +5335,10 @@ var Hour0to23Parser = (function(_Parser) {
     }
   }]);
   return Hour0to23Parser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/Hour0To11Parser.js
-var Hour0To11Parser = (function(_Parser) {
+var Hour0To11Parser = function(_Parser) {
   _inherits(Hour0To11Parser2, _Parser);
   var _super = _createSuper(Hour0To11Parser2);
   function Hour0To11Parser2() {
@@ -5499,10 +5384,10 @@ var Hour0To11Parser = (function(_Parser) {
     }
   }]);
   return Hour0To11Parser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/Hour1To24Parser.js
-var Hour1To24Parser = (function(_Parser) {
+var Hour1To24Parser = function(_Parser) {
   _inherits(Hour1To24Parser2, _Parser);
   var _super = _createSuper(Hour1To24Parser2);
   function Hour1To24Parser2() {
@@ -5544,10 +5429,10 @@ var Hour1To24Parser = (function(_Parser) {
     }
   }]);
   return Hour1To24Parser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/MinuteParser.js
-var MinuteParser = (function(_Parser) {
+var MinuteParser = function(_Parser) {
   _inherits(MinuteParser2, _Parser);
   var _super = _createSuper(MinuteParser2);
   function MinuteParser2() {
@@ -5588,10 +5473,10 @@ var MinuteParser = (function(_Parser) {
     }
   }]);
   return MinuteParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/SecondParser.js
-var SecondParser = (function(_Parser) {
+var SecondParser = function(_Parser) {
   _inherits(SecondParser2, _Parser);
   var _super = _createSuper(SecondParser2);
   function SecondParser2() {
@@ -5632,10 +5517,10 @@ var SecondParser = (function(_Parser) {
     }
   }]);
   return SecondParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/FractionOfSecondParser.js
-var FractionOfSecondParser = (function(_Parser) {
+var FractionOfSecondParser = function(_Parser) {
   _inherits(FractionOfSecondParser2, _Parser);
   var _super = _createSuper(FractionOfSecondParser2);
   function FractionOfSecondParser2() {
@@ -5665,10 +5550,10 @@ var FractionOfSecondParser = (function(_Parser) {
     }
   }]);
   return FractionOfSecondParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/ISOTimezoneWithZParser.js
-var ISOTimezoneWithZParser = (function(_Parser) {
+var ISOTimezoneWithZParser = function(_Parser) {
   _inherits(ISOTimezoneWithZParser2, _Parser);
   var _super = _createSuper(ISOTimezoneWithZParser2);
   function ISOTimezoneWithZParser2() {
@@ -5709,10 +5594,10 @@ var ISOTimezoneWithZParser = (function(_Parser) {
     }
   }]);
   return ISOTimezoneWithZParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/ISOTimezoneParser.js
-var ISOTimezoneParser = (function(_Parser) {
+var ISOTimezoneParser = function(_Parser) {
   _inherits(ISOTimezoneParser2, _Parser);
   var _super = _createSuper(ISOTimezoneParser2);
   function ISOTimezoneParser2() {
@@ -5753,10 +5638,10 @@ var ISOTimezoneParser = (function(_Parser) {
     }
   }]);
   return ISOTimezoneParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/TimestampSecondsParser.js
-var TimestampSecondsParser = (function(_Parser) {
+var TimestampSecondsParser = function(_Parser) {
   _inherits(TimestampSecondsParser2, _Parser);
   var _super = _createSuper(TimestampSecondsParser2);
   function TimestampSecondsParser2() {
@@ -5784,10 +5669,10 @@ var TimestampSecondsParser = (function(_Parser) {
     }
   }]);
   return TimestampSecondsParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/TimestampMillisecondsParser.js
-var TimestampMillisecondsParser = (function(_Parser) {
+var TimestampMillisecondsParser = function(_Parser) {
   _inherits(TimestampMillisecondsParser2, _Parser);
   var _super = _createSuper(TimestampMillisecondsParser2);
   function TimestampMillisecondsParser2() {
@@ -5815,7 +5700,7 @@ var TimestampMillisecondsParser = (function(_Parser) {
     }
   }]);
   return TimestampMillisecondsParser2;
-})(Parser);
+}(Parser);
 
 // node_modules/date-fns/esm/parse/_lib/parsers/index.js
 var parsers = {

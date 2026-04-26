@@ -246,18 +246,7 @@ function DesktopSidebar({
     <aside className="desktop-sidebar">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="url(#sidebar-grad)" />
-            <path d="M8 16C8 11.58 11.58 8 16 8C20.42 8 24 11.58 24 16" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            <path d="M16 12V16L19 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="16" cy="22" r="2" fill="white" />
-            <defs>
-              <linearGradient id="sidebar-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366F1" />
-                <stop offset="1" stopColor="#4F46E5" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="/icon-512.png" alt="FinCalendar" width="36" height="36" style={{ borderRadius: 10, objectFit: 'cover' }} />
           <span>FinCalendar</span>
         </div>
       </div>
