@@ -601,10 +601,10 @@ export default function Statistics() {
   };
 
   const mainContent = (
-    <div className="page-enter pb-32" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="page-enter pb-32 md:pb-8" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
       {/* Header */}
-      <div className="px-5 pt-6 pb-3 flex items-center justify-between">
+      <div className="px-5 md:px-8 pt-6 pb-3 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-100">{t.statistics}</h1>
         <button
           onClick={handleRefresh}
@@ -621,7 +621,7 @@ export default function Statistics() {
       </div>
 
       {/* View toggle */}
-      <div className="mx-5 mb-4 flex rounded-2xl p-1 gap-1" style={{ background: '#131325' }}>
+      <div className="mx-5 md:mx-8 mb-4 flex rounded-2xl p-1 gap-1" style={{ background: '#131325' }}>
         {([['stats', t.statistics], ['budgets', t.budgetsTitle]] as [View, string][]).map(([v, label]) => (
           <button
             key={v}
@@ -642,7 +642,7 @@ export default function Statistics() {
       </div>
 
       {/* Period navigator */}
-      <div className="mx-5 mb-4 flex items-center justify-between px-1">
+      <div className="mx-5 md:mx-8 mb-4 flex items-center justify-between px-1">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl flex items-center justify-center active-scale" style={{ background: '#1E1E38' }}>
           <ChevronLeft size={18} className="text-slate-300" />
         </button>
@@ -671,7 +671,7 @@ export default function Statistics() {
         {view === 'stats' && (
           <>
             {/* Period toggle */}
-            <div className="mx-5 mb-4 flex rounded-2xl p-1 gap-1" style={{ background: '#131325' }}>
+            <div className="mx-5 md:mx-8 mb-4 flex rounded-2xl p-1 gap-1" style={{ background: '#131325' }}>
               {([['week', t.week], ['month', t.month]] as [Period, string][]).map(([p, label]) => (
                 <button
                   key={p}
@@ -685,7 +685,7 @@ export default function Statistics() {
             </div>
 
             {/* Summary Cards — clickable */}
-            <div className="px-5 grid grid-cols-3 gap-2 mb-2">
+            <div className="px-5 md:px-8 grid grid-cols-3 gap-2 mb-2">
               <SummaryCard
                 label={t.incomeLabel}
                 value={formatAmount(totalIncome, dc)}
@@ -712,7 +712,7 @@ export default function Statistics() {
             </div>
 
             {/* Savings rate — always shown */}
-            <div className="px-5 mb-4">
+            <div className="px-5 md:px-8 mb-4">
               <span className="text-[11px] text-slate-500">
                 {language === 'ru' ? 'Норма сбережений:' : 'Savings rate:'}
               </span>
@@ -721,6 +721,9 @@ export default function Statistics() {
                 {savingsRate !== null ? `${savingsRate}%` : '—'}
               </span>
             </div>
+
+            {/* Desktop 2-column charts grid */}
+            <div className="md:grid md:grid-cols-2 md:gap-4 md:px-8">
 
             {/* Planned Expenses block */}
             <PlannedBlock
@@ -760,7 +763,7 @@ export default function Statistics() {
             <BalanceForecast />
 
             {/* Bar chart */}
-            <div className="mx-5 mb-5 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+            <div className="mx-5 mb-5 md:mx-0 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
               <button
                 onClick={() => toggleSection('bar')}
                 className="w-full flex items-center justify-between px-4 py-3 active-scale"
@@ -797,7 +800,7 @@ export default function Statistics() {
 
             {/* Balance trend — month view */}
             {period === 'month' && (
-              <div className="mx-5 mb-5 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+              <div className="mx-5 mb-5 md:mx-0 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
                 <button
                   onClick={() => toggleSection('trend')}
                   className="w-full flex items-center justify-between px-4 py-3 active-scale"
@@ -859,7 +862,7 @@ export default function Statistics() {
             )}
 
             {/* Pie chart */}
-            <div className="mx-5 mb-5 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+            <div className="mx-5 mb-5 md:mx-0 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
               <button
                 onClick={() => toggleSection('pie')}
                 className="w-full flex items-center justify-between px-4 py-3 active-scale"
@@ -916,7 +919,7 @@ export default function Statistics() {
             </div>
 
             {/* Top expenses */}
-            <div className="mx-5 mb-5 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+            <div className="mx-5 mb-5 md:mx-0 rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
               <button
                 onClick={() => toggleSection('top')}
                 className="w-full flex items-center justify-between px-4 py-3 active-scale"
@@ -958,6 +961,7 @@ export default function Statistics() {
                 );
               })}
             </div>
+            </div>{/* end desktop 2-col charts grid */}
           </>
         )}
 
@@ -966,7 +970,7 @@ export default function Statistics() {
         {/* ════════════════════════════════════════════════════════ */}
         {view === 'budgets' && (
           <>
-            <div className="mx-5 mb-4 flex items-center justify-between">
+            <div className="mx-5 md:mx-8 mb-4 flex items-center justify-between">
               <p className="text-sm text-slate-400">{language === 'ru' ? 'Лимиты на месяц' : 'Monthly limits'}</p>
               <button onClick={openAdd} className="w-9 h-9 rounded-full flex items-center justify-center active-scale" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>
                 <Plus size={18} color="white" />
@@ -979,7 +983,7 @@ export default function Statistics() {
               const okCount = budgetProgress.filter(b => !b.isOver && !b.isWarning).length;
               const overallColor = overCount > 0 ? '#EF4444' : warnCount > 0 ? '#F59E0B' : '#10B981';
               return (
-                <div className="mx-5 mb-4 rounded-2xl p-4" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+                <div className="mx-5 md:mx-8 mb-4 rounded-2xl p-4" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-slate-300">{language === 'ru' ? 'Общий бюджет' : 'Total budget'}</span>
                     <span className="text-sm font-bold" style={{ color: overallColor }}>{overallPct}%</span>
@@ -1024,7 +1028,7 @@ export default function Statistics() {
                 <button onClick={openAdd} className="px-6 py-3 rounded-2xl font-semibold text-white active-scale" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>{t.addBudget}</button>
               </div>
             ) : (
-              <div className="mx-5 space-y-3 pb-4">
+              <div className="mx-5 md:mx-8 space-y-3 pb-4">
                 {budgetProgress.map((b) => {
                   const cat = getCat(b.categoryId);
                   const color = getColor(b);
@@ -1316,7 +1320,7 @@ function PlannedBlock({
 
   if (total === 0) {
     return (
-      <div className="mx-5 mb-3 rounded-2xl overflow-hidden" style={{ border: `1px solid ${accentColor}18` }}>
+      <div className="mx-5 mb-3 md:mx-0 rounded-2xl overflow-hidden" style={{ border: `1px solid ${accentColor}18` }}>
         <button onClick={onToggle} className="w-full px-4 py-3 flex items-center justify-between active-scale" style={{ background: '#0E0E1C' }}>
           <div className="flex items-center gap-2">
             <CalendarClock size={15} color={accentColor} style={{ opacity: 0.45 }} />
@@ -1332,7 +1336,7 @@ function PlannedBlock({
   }
 
   return (
-    <div className="mx-5 mb-5 rounded-2xl overflow-hidden" style={{ border: `1px solid ${accentColor}30` }}>
+    <div className="mx-5 mb-5 md:mx-0 rounded-2xl overflow-hidden" style={{ border: `1px solid ${accentColor}30` }}>
       {/* Header — clickable to collapse */}
       <button onClick={onToggle} className="w-full px-4 py-3 flex items-center justify-between active-scale" style={{ background: '#0E0E1C' }}>
         <div className="flex items-center gap-2">

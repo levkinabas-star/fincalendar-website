@@ -51,13 +51,16 @@ export default function Settings() {
   };
 
   return (
-    <div className="page-enter pb-32">
-      <div className="px-5 pt-6 pb-5">
+    <div className="page-enter pb-32 md:pb-8">
+      <div className="px-5 md:px-8 lg:px-12 pt-6 pb-5 md:pt-8">
         <h1 className="text-2xl font-bold text-slate-100">{t.settings}</h1>
       </div>
 
+      {/* Settings content with max-width */}
+      <div className="md:px-8 lg:px-12 md:max-w-3xl">
+
       {/* Pro plan banner */}
-      <div className="mx-5 mb-5">
+      <div className="mx-5 mb-5 md:mx-0">
         {isPro ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3 px-4 py-4 rounded-2xl"
@@ -305,7 +308,7 @@ export default function Settings() {
       </Section>
 
       {/* Danger Zone */}
-      <div className="mx-5 mb-5">
+      <div className="mx-5 mb-5 md:mx-0">
         <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #2D1B1B' }}>
           <div className="px-4 py-2" style={{ background: '#1A0F0F' }}>
             <p className="text-xs font-semibold text-red-500 uppercase tracking-wide">Danger Zone</p>
@@ -363,13 +366,15 @@ export default function Settings() {
       </Section>
 
       {/* About */}
-      <div className="mx-5 mb-5 px-4 py-4 rounded-2xl text-center" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+      <div className="mx-5 mb-5 md:mx-0 px-4 py-4 rounded-2xl text-center" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
         <div className="text-3xl mb-2">💰</div>
         <p className="text-sm font-semibold text-slate-200">FinCalendar</p>
         <p className="text-xs text-slate-500 mt-0.5">{t.version}</p>
         <p className="text-xs text-slate-600 mt-1.5">
           © 2026 FinCalendar. {language === 'ru' ? 'Все права защищены.' : 'All rights reserved.'}
         </p>
+      </div>
+
       </div>
 
       {/* Currency Modal */}
@@ -510,7 +515,7 @@ export default function Settings() {
 
 function Section({ title, icon, children }: { title: React.ReactNode; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="mx-5 mb-5">
+    <div className="mx-5 mb-5 md:mx-0">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-blue-400">{icon}</span>
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{title}</h2>

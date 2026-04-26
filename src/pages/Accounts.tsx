@@ -47,9 +47,9 @@ export default function Accounts() {
   const filteredDebts = debtFilter === 'active' ? activeDebts : paidDebts;
 
   return (
-    <div className="page-enter pb-32">
+    <div className="page-enter pb-32 md:pb-8">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-5">
+      <div className="flex items-center justify-between px-5 md:px-8 lg:px-12 pt-6 pb-5 md:pt-8">
         <h1 className="text-2xl font-bold text-slate-100">{t.myAccounts}</h1>
         <button
           onClick={() => canAddAccount ? setShowAdd(true) : null}
@@ -71,6 +71,9 @@ export default function Accounts() {
         </div>
       )}
 
+      {/* Desktop 2-col wrapper */}
+      <div className="md:grid md:grid-cols-2 md:gap-6 md:px-8 lg:px-12 md:items-start">
+
       {/* Accounts Grid */}
       {accounts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
@@ -90,7 +93,7 @@ export default function Accounts() {
           </button>
         </div>
       ) : (
-        <div className="px-5 grid grid-cols-1 gap-4 mb-6">
+        <div className="px-5 md:px-0 grid grid-cols-1 gap-4 mb-6">
           {accounts.map((acc) => (
             <AccountCard
               key={acc.id}
@@ -112,7 +115,7 @@ export default function Accounts() {
       )}
 
       {/* ═══════════ DEBTS SECTION ═══════════ */}
-      <div className="px-5">
+      <div className="px-5 md:px-0">
         {/* Debts header */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.debts}</h2>
@@ -233,6 +236,8 @@ export default function Accounts() {
             ))}
           </div>
         )}
+      </div>
+
       </div>
 
       {/* ═══════════ ACCOUNT MODALS ═══════════ */}

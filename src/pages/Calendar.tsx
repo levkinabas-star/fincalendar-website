@@ -124,9 +124,9 @@ export default function Calendar() {
   const hasAnything = hasDayOps || selectedTx.length > 0 || (debtsWithDueDateMap[selectedDate]?.length ?? 0) > 0;
 
   return (
-    <div className="page-enter pb-32">
+    <div className="page-enter pb-32 md:pb-8">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-4">
+      <div className="flex items-center justify-between px-5 md:px-8 pt-6 pb-4 md:pt-8">
         <h1 className="text-2xl font-bold text-slate-100">{t.calendar}</h1>
         <button
           onClick={() => canAddPlannedExpense ? setShowAdd(true) : navigate('/pricing')}
@@ -139,7 +139,7 @@ export default function Calendar() {
       </div>
 
       {/* Month Navigator */}
-      <div className="flex items-center justify-between px-5 mb-4">
+      <div className="flex items-center justify-between px-5 md:px-8 mb-4">
         <button onClick={prevMonth} className="w-9 h-9 rounded-xl flex items-center justify-center active-scale" style={{ background: '#1E1E38' }}>
           <ChevronLeft size={18} className="text-slate-300" />
         </button>
@@ -152,7 +152,7 @@ export default function Calendar() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="mx-5 rounded-2xl overflow-hidden mb-5" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+      <div className="mx-5 md:mx-8 rounded-2xl overflow-hidden mb-5" style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
         {/* Weekday headers */}
         <div className="grid grid-cols-7 border-b" style={{ borderColor: '#1E2A40' }}>
           {t.weekdays.map((wd, i) => (
@@ -228,7 +228,7 @@ export default function Calendar() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-5 mb-5 flex-wrap">
+      <div className="flex items-center gap-4 px-5 md:px-8 mb-5 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full" style={{ background: '#F59E0B' }} />
           <span className="text-xs text-slate-500">{t.pending}</span>
@@ -256,7 +256,7 @@ export default function Calendar() {
       </div>
 
       {/* Selected Day Panel */}
-      <div className="mx-5 space-y-4">
+      <div className="mx-5 md:mx-8 space-y-4">
         {/* Date title */}
         <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
           {selectedDate === format(new Date(), 'yyyy-MM-dd') ? t.today : selectedDate}

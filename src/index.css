@@ -136,6 +136,7 @@ select option {
   margin-left: 240px;
   min-height: 100vh;
   background: #07070F;
+  max-width: calc(100vw - 240px);
 }
 
 .app-main-mobile {
@@ -235,6 +236,47 @@ select option {
   }
   .desktop-fab {
     display: flex;
+  }
+}
+
+/* Better desktop content constraints */
+@media (min-width: 768px) {
+  .page-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Wider, better sidebar */
+  .desktop-sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, #0D0D1A 0%, #080814 100%);
+    border-right: 1px solid #1A1A30;
+  }
+
+  .app-main-desktop {
+    margin-left: 260px;
+    max-width: calc(100vw - 260px);
+  }
+
+  .sidebar-nav-item {
+    padding: 11px 14px;
+    font-size: 13.5px;
+  }
+
+  .sidebar-nav-item.active {
+    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
+  }
+
+  /* Desktop FAB improvement */
+  .desktop-fab {
+    bottom: 32px;
+    right: 32px;
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
   }
 }
 
