@@ -149,7 +149,7 @@ function AppShell({ children, openAdd, showAdd, setShowAdd, entityType, setEntit
         )}
 
         <main className={isDesktop ? 'app-main-desktop' : 'app-main-mobile'}>
-          {children}
+          {isDesktop ? <div className="desktop-page-container">{children}</div> : children}
         </main>
 
         {!isDesktop && (

@@ -52,12 +52,12 @@ export default function Settings() {
 
   return (
     <div className="page-enter pb-32 md:pb-8">
-      <div className="px-5 md:px-8 lg:px-12 pt-6 pb-5 md:pt-8">
+      <div className="px-5 md:px-8 pt-6 pb-5 md:pt-8">
         <h1 className="text-2xl font-bold text-slate-100">{t.settings}</h1>
       </div>
 
       {/* Settings content with max-width */}
-      <div className="md:px-8 lg:px-12 md:max-w-3xl">
+      <div className="md:px-8 md:max-w-3xl">
 
       {/* Pro plan banner */}
       <div className="mx-5 mb-5 md:mx-0">

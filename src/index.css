@@ -133,10 +133,9 @@ select option {
 
 .app-main-desktop {
   flex: 1;
-  margin-left: 240px;
+  margin-left: 280px;
   min-height: 100vh;
   background: #07070F;
-  max-width: calc(100vw - 240px);
 }
 
 .app-main-mobile {
@@ -144,10 +143,19 @@ select option {
   background: #07070F;
 }
 
+/* ── Desktop centered content container ── */
+.desktop-page-container {
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
 .desktop-sidebar {
-  width: 240px;
-  background: #0D0D1A;
-  border-right: 1px solid #1E1E32;
+  width: 280px;
+  background: linear-gradient(180deg, #09091A 0%, #0C0C1E 100%);
+  border-right: 1px solid rgba(99, 102, 241, 0.12);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -155,139 +163,106 @@ select option {
   left: 0;
   bottom: 0;
   z-index: 50;
+  box-shadow: 2px 0 24px rgba(0, 0, 0, 0.6);
 }
 
 .sidebar-header {
-  padding: 20px 16px;
-  border-bottom: 1px solid #1E1E32;
+  padding: 24px 20px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 700;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 800;
   color: #fff;
+  letter-spacing: -0.4px;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 12px 8px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  overflow-y: auto;
 }
 
 .sidebar-nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 11px 16px;
   border-radius: 12px;
-  color: #A0A0B8;
-  font-size: 14px;
+  color: rgba(241, 245, 249, 0.38);
+  font-size: 13.5px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.15s;
   width: 100%;
   text-align: left;
   background: transparent;
   border: none;
   cursor: pointer;
+  letter-spacing: -0.1px;
+  position: relative;
 }
 
 .sidebar-nav-item:hover {
-  background: #131325;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(241, 245, 249, 0.8);
 }
 
 .sidebar-nav-item.active {
-  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  background: rgba(99, 102, 241, 0.15);
   color: #fff;
 }
 
+.sidebar-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: #6366F1;
+  border-radius: 0 3px 3px 0;
+}
+
+/* ── Desktop FAB ── */
 .desktop-fab {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 28px;
+  right: 28px;
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
   color: white;
   display: none;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.45);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 28px rgba(99, 102, 241, 0.55);
+  transition: all 0.2s;
   z-index: 40;
   border: none;
   cursor: pointer;
 }
 
 .desktop-fab:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 10px 36px rgba(99, 102, 241, 0.65);
 }
 
 @media (min-width: 768px) {
-  .app-shell-mobile {
-    display: block;
-  }
-  .desktop-fab {
-    display: flex;
-  }
-}
-
-/* Better desktop content constraints */
-@media (min-width: 768px) {
-  .page-content {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0;
-  }
-
-  /* Wider, better sidebar */
-  .desktop-sidebar {
-    width: 260px;
-    background: linear-gradient(180deg, #0D0D1A 0%, #080814 100%);
-    border-right: 1px solid #1A1A30;
-  }
-
-  .app-main-desktop {
-    margin-left: 260px;
-    max-width: calc(100vw - 260px);
-  }
-
-  .sidebar-nav-item {
-    padding: 11px 14px;
-    font-size: 13.5px;
-  }
-
-  .sidebar-nav-item.active {
-    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
-  }
-
-  /* Desktop FAB improvement */
-  .desktop-fab {
-    bottom: 32px;
-    right: 32px;
-    width: 60px;
-    height: 60px;
-    border-radius: 18px;
-    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
-  }
+  .app-shell-mobile { display: block; }
+  .desktop-fab { display: flex; }
 }
 
 @media (max-width: 767px) {
-  .desktop-sidebar {
-    display: none;
-  }
-  .app-main-desktop {
-    margin-left: 0;
-  }
-  .desktop-fab {
-    display: none;
-  }
+  .desktop-sidebar { display: none; }
+  .app-main-desktop { margin-left: 0; }
+  .desktop-fab { display: none; }
 }

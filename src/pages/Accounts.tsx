@@ -49,7 +49,7 @@ export default function Accounts() {
   return (
     <div className="page-enter pb-32 md:pb-8">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 md:px-8 lg:px-12 pt-6 pb-5 md:pt-8">
+      <div className="flex items-center justify-between px-5 md:px-8 pt-6 pb-5 md:pt-8">
         <h1 className="text-2xl font-bold text-slate-100">{t.myAccounts}</h1>
         <button
           onClick={() => canAddAccount ? setShowAdd(true) : null}
@@ -72,7 +72,7 @@ export default function Accounts() {
       )}
 
       {/* Desktop 2-col wrapper */}
-      <div className="md:grid md:grid-cols-2 md:gap-6 md:px-8 lg:px-12 md:items-start">
+      <div className="md:grid md:grid-cols-2 md:gap-6 md:px-8 md:items-start">
 
       {/* Accounts Grid */}
       {accounts.length === 0 ? (
@@ -93,7 +93,7 @@ export default function Accounts() {
           </button>
         </div>
       ) : (
-        <div className="px-5 md:px-0 grid grid-cols-1 gap-4 mb-6">
+        <div className="px-5 md:px-0 grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {accounts.map((acc) => (
             <AccountCard
               key={acc.id}

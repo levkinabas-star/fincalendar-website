@@ -240,12 +240,12 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="page-enter pb-32 md:pb-8">
+    <div className="page-enter pb-32 md:pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 md:px-8 lg:px-12 pt-6 pb-4 md:pt-8">
+      <div className="flex items-center justify-between px-5 md:px-8 pt-6 pb-4 md:pt-8">
         <div>
           <p className="text-slate-400 text-sm">{greeting()} 👋</p>
-          <h1 className="text-xl font-bold text-slate-100">{t.totalBalance}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-100">{t.totalBalance}</h1>
         </div>
         <button
           onClick={() => navigate('/settings')}
@@ -256,13 +256,8 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Desktop 2-column layout */}
-      <div className="md:flex md:gap-6 md:px-8 lg:px-12 md:items-start">
-      {/* Left column */}
-      <div className="md:flex-1 md:min-w-0">
-
       {/* Balance Hero */}
-      <div className="mx-5 mb-5 md:mx-0 p-5 rounded-3xl relative overflow-hidden"
+      <div className="mx-5 mb-5 md:mx-8 p-5 md:p-6 rounded-3xl relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #1A2744 0%, #0E1929 100%)',
           border: '1px solid #1E3A5F',
@@ -322,8 +317,175 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Accounts Quick View */}
+      {accounts.length > 0 ? (
+        <div className="mb-5 md:mb-6">
+          <div className="flex items-center justify-between px-5 md:px-8 mb-3">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.accounts}</h2>
+            <button onClick={() => navigate('/accounts')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
+              {t.seeAll} <ChevronRight size={13} />
+            </button>
+          </div>
+          <div className="flex gap-3 px-5 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 md:px-8">
+            {accounts.map((acc) => (
+              <button
+                key={acc.id}
+                onClick={() => setSelectedAccountId(acc.id)}
+                className="flex-shrink-0 rounded-2xl p-4 min-w-[150px] text-left active-scale md:min-w-0 md:flex-shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, ${acc.color}20 0%, ${acc.color}08 100%)`,
+                  border: `1px solid ${acc.color}30`,
+                }}
+                aria-label={`${acc.name}: ${formatAmount(acc.balance, acc.currency)}`}
+              >
+                <div className="text-2xl mb-2">{acc.icon}</div>
+                <p className="text-[11px] text-slate-400">{acc.name}</p>
+                <p className="text-base font-bold mt-0.5" style={{ color: acc.balance >= 0 ? '#F1F5F9' : '#EF4444' }}>
+                  {formatAmount(acc.balance, acc.currency)}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mx-5 mb-5 md:mx-8 md:mb-6">
+          <div className="flex items-center justify-between px-5 md:px-8 mb-3">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.accounts}</h2>
+            <button onClick={() => navigate('/accounts')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
+              {t.seeAll} <ChevronRight size={13} />
+            </button>
+          </div>
+          <button
+            onClick={() => navigate('/accounts')}
+            className="w-full rounded-2xl p-5 flex items-center gap-4 active-scale"
+            style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}
+            aria-label={language === 'ru' ? 'Добавить счёт' : 'Add account'}
+          >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: '#1E1E38' }}>
+              <span className="text-2xl">+</span>
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-slate-200">
+                {language === 'ru' ? 'Добавить счёт' : 'Add account'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {language === 'ru' ? 'Начните с создания счёта' : 'Start by creating an account'}
+              </p>
+            </div>
+            <ChevronRight size={16} className="text-slate-500 ml-auto" />
+          </button>
+        </div>
+      )}
+
+      {/* Upcoming Planned Payments */}
+      <div className="mx-5 mb-5 md:mx-8">
+        <button
+          className="flex items-center justify-between w-full mb-3 active-scale"
+          onClick={() => setShowAllPlanned(true)}
+        >
+          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+            {language === 'ru' ? 'Ближайшие платежи' : 'Upcoming Payments'}
+          </h2>
+          {upcoming.length > 0 && (
+            <span className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
+              {language === 'ru' ? `Все (${upcoming.length})` : `All (${upcoming.length})`}
+              <ChevronRight size={13} />
+            </span>
+          )}
+        </button>
+        {upcoming.length === 0 ? (
+          <div className="rounded-2xl px-4 py-5 flex items-center gap-3"
+            style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: '#1E2A4066' }}>
+              <span className="text-lg">📅</span>
+            </div>
+            <p className="text-sm text-slate-500">
+              {language === 'ru' ? 'Нет предстоящих платежей' : 'No upcoming payments'}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #1E2A40' }}>
+            {upcoming.slice(0, 2).map((item, idx) => (
+                <UpcomingRow
+                  key={item.kind === 'planned' ? `p-${item.expense.id}-${item.date}` : `d-${item.payment.id}`}
+                  item={item}
+                  idx={idx}
+                  total={Math.min(upcoming.length, 2)}
+                  getCat={getCat}
+                  getAcc={getAcc}
+                  language={language}
+                  today={t.today}
+                  onMarkNoDeduction={item.kind === 'planned' ? (id: string, date: string) => markPlannedCompletedNoDeduction(id, date) : undefined}
+                  onTogglePlanned={item.kind === 'planned' ? (id: string, date: string) => togglePlannedCompleted(id, date) : undefined}
+                  onEditPlanned={item.kind === 'planned' ? (expense: PlannedExpense) => setEditingPe(expense) : undefined}
+                  onDeletePlanned={item.kind === 'planned' ? (id: string, date: string) => setDeletingPe({ id, date }) : undefined}
+                  onToggleDebtScheduled={item.kind === 'debt' ? (debtId: string, scheduledId: string, date: string) => {
+                    const sp = item.payment;
+                    if (sp.completedDates?.includes(date)) {
+                      unmarkScheduledCompleted(debtId, scheduledId, date);
+                    } else {
+                      markScheduledCompletedNoDeduction(debtId, scheduledId, date);
+                    }
+                  } : undefined}
+                  accounts={accounts}
+                  onPayDebtScheduled={item.kind === 'debt' ? (debtId: string, scheduledId: string, accountId: string) => markScheduledAsPaid(debtId, scheduledId, accountId) : undefined}
+                />
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Budget Alerts */}
+      {budgetAlerts.length > 0 && (
+        <div className="mx-5 mb-5 md:mx-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+              {language === 'ru' ? 'Бюджет' : 'Budget'}
+            </h2>
+            <button onClick={() => navigate('/budgets')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
+              {t.seeAll} <ChevronRight size={13} />
+            </button>
+          </div>
+          <div className="space-y-2">
+            {budgetAlerts.slice(0, 3).map((b) => {
+              const color = b.pct >= 100 ? '#EF4444' : b.pct >= 90 ? '#F59E0B' : '#3B82F6';
+              return (
+                <div
+                  key={b.id}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active-scale"
+                  style={{ background: '#0E0E1C', border: `1px solid ${color}30` }}
+                  onClick={() => navigate('/budgets')}
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${b.cat?.color ?? '#94A3B8'}22` }}>
+                    <span className="text-lg">{b.cat?.icon ?? '📊'}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-slate-200 truncate">
+                        {language === 'ru' ? b.cat?.name : b.cat?.nameEn}
+                      </p>
+                      <span className="text-xs font-bold flex-shrink-0 ml-2" style={{ color }}>
+                        {b.pct}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: '#1E2A40' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(b.pct, 100)}%`, background: color }} />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      {formatAmount(b.spent, defaultCurrency as any)} / {formatAmount(b.limit, defaultCurrency as any)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Recent Transactions — transactions + debt payments, grouped by date */}
-      <div className="mx-5 md:mx-0">
+      <div className="mx-5 md:mx-8">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-3">{t.recentTransactions}</h2>
         {unifiedSorted.length === 0 ? (
           <div className="text-center py-10 text-slate-500">
@@ -560,180 +722,6 @@ export default function Dashboard() {
             )}
           </div>
         )}
-      </div>
-
-      </div>
-      {/* Right column */}
-      <div className="md:w-[340px] md:flex-shrink-0 md:space-y-5">
-
-      {/* Accounts Quick View */}
-      {accounts.length > 0 ? (
-        <div className="mb-5 md:mb-0">
-          <div className="flex items-center justify-between px-5 md:px-0 mb-3">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.accounts}</h2>
-            <button onClick={() => navigate('/accounts')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
-              {t.seeAll} <ChevronRight size={13} />
-            </button>
-          </div>
-          <div className="flex gap-3 px-5 overflow-x-auto pb-1 md:grid md:grid-cols-2 md:overflow-visible md:pb-0 md:px-0">
-            {accounts.map((acc) => (
-              <button
-                key={acc.id}
-                onClick={() => setSelectedAccountId(acc.id)}
-                className="flex-shrink-0 rounded-2xl p-4 min-w-[150px] text-left active-scale"
-                style={{
-                  background: `linear-gradient(135deg, ${acc.color}20 0%, ${acc.color}08 100%)`,
-                  border: `1px solid ${acc.color}30`,
-                }}
-                aria-label={`${acc.name}: ${formatAmount(acc.balance, acc.currency)}`}
-              >
-                <div className="text-2xl mb-2">{acc.icon}</div>
-                <p className="text-[11px] text-slate-400">{acc.name}</p>
-                <p className="text-base font-bold mt-0.5" style={{ color: acc.balance >= 0 ? '#F1F5F9' : '#EF4444' }}>
-                  {formatAmount(acc.balance, acc.currency)}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="mx-5 mb-5 md:mx-0 md:mb-0">
-          <div className="flex items-center justify-between px-5 md:px-0 mb-3">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">{t.accounts}</h2>
-            <button onClick={() => navigate('/accounts')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
-              {t.seeAll} <ChevronRight size={13} />
-            </button>
-          </div>
-          <button
-            onClick={() => navigate('/accounts')}
-            className="w-full rounded-2xl p-5 flex items-center gap-4 active-scale"
-            style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}
-            aria-label={language === 'ru' ? 'Добавить счёт' : 'Add account'}
-          >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: '#1E1E38' }}>
-              <span className="text-2xl">+</span>
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium text-slate-200">
-                {language === 'ru' ? 'Добавить счёт' : 'Add account'}
-              </p>
-              <p className="text-xs text-slate-500">
-                {language === 'ru' ? 'Начните с создания счёта' : 'Start by creating an account'}
-              </p>
-            </div>
-            <ChevronRight size={16} className="text-slate-500 ml-auto" />
-          </button>
-        </div>
-      )}
-
-      {/* Upcoming Planned Payments — always visible */}
-      <div className="mx-5 mb-5 md:mx-0 md:mb-0">
-        <button
-          className="flex items-center justify-between w-full mb-3 active-scale"
-          onClick={() => setShowAllPlanned(true)}
-        >
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
-            {language === 'ru' ? 'Ближайшие платежи' : 'Upcoming Payments'}
-          </h2>
-          {upcoming.length > 0 && (
-            <span className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
-              {language === 'ru' ? `Все (${upcoming.length})` : `All (${upcoming.length})`}
-              <ChevronRight size={13} />
-            </span>
-          )}
-        </button>
-        {upcoming.length === 0 ? (
-          <div className="rounded-2xl px-4 py-5 flex items-center gap-3"
-            style={{ background: '#0E0E1C', border: '1px solid #1E2A40' }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: '#1E2A4066' }}>
-              <span className="text-lg">📅</span>
-            </div>
-            <p className="text-sm text-slate-500">
-              {language === 'ru' ? 'Нет предстоящих платежей' : 'No upcoming payments'}
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #1E2A40' }}>
-            {upcoming.slice(0, 2).map((item, idx) => (
-                <UpcomingRow
-                  key={item.kind === 'planned' ? `p-${item.expense.id}-${item.date}` : `d-${item.payment.id}`}
-                  item={item}
-                  idx={idx}
-                  total={Math.min(upcoming.length, 2)}
-                  getCat={getCat}
-                  getAcc={getAcc}
-                  language={language}
-                  today={t.today}
-                  onMarkNoDeduction={item.kind === 'planned' ? (id: string, date: string) => markPlannedCompletedNoDeduction(id, date) : undefined}
-                  onTogglePlanned={item.kind === 'planned' ? (id: string, date: string) => togglePlannedCompleted(id, date) : undefined}
-                  onEditPlanned={item.kind === 'planned' ? (expense: PlannedExpense) => setEditingPe(expense) : undefined}
-                  onDeletePlanned={item.kind === 'planned' ? (id: string, date: string) => setDeletingPe({ id, date }) : undefined}
-                  onToggleDebtScheduled={item.kind === 'debt' ? (debtId: string, scheduledId: string, date: string) => {
-                    const sp = item.payment;
-                    if (sp.completedDates?.includes(date)) {
-                      unmarkScheduledCompleted(debtId, scheduledId, date);
-                    } else {
-                      markScheduledCompletedNoDeduction(debtId, scheduledId, date);
-                    }
-                  } : undefined}
-                  accounts={accounts}
-                  onPayDebtScheduled={item.kind === 'debt' ? (debtId: string, scheduledId: string, accountId: string) => markScheduledAsPaid(debtId, scheduledId, accountId) : undefined}
-                />
-              ))}
-          </div>
-        )}
-      </div>
-
-      {/* Budget Alerts */}
-      {budgetAlerts.length > 0 && (
-        <div className="mx-5 mb-5 md:mx-0 md:mb-0">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
-              {language === 'ru' ? 'Бюджет' : 'Budget'}
-            </h2>
-            <button onClick={() => navigate('/budgets')} className="text-blue-400 text-xs font-medium flex items-center gap-0.5">
-              {t.seeAll} <ChevronRight size={13} />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {budgetAlerts.slice(0, 3).map((b) => {
-              const color = b.pct >= 100 ? '#EF4444' : b.pct >= 90 ? '#F59E0B' : '#3B82F6';
-              return (
-                <div
-                  key={b.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active-scale"
-                  style={{ background: '#0E0E1C', border: `1px solid ${color}30` }}
-                  onClick={() => navigate('/budgets')}
-                >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${b.cat?.color ?? '#94A3B8'}22` }}>
-                    <span className="text-lg">{b.cat?.icon ?? '📊'}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-slate-200 truncate">
-                        {language === 'ru' ? b.cat?.name : b.cat?.nameEn}
-                      </p>
-                      <span className="text-xs font-bold flex-shrink-0 ml-2" style={{ color }}>
-                        {b.pct}%
-                      </span>
-                    </div>
-                    <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: '#1E2A40' }}>
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(b.pct, 100)}%`, background: color }} />
-                    </div>
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      {formatAmount(b.spent, defaultCurrency as any)} / {formatAmount(b.limit, defaultCurrency as any)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      </div>
       </div>
 
       {/* All Planned Payments Modal */}
